@@ -1,0 +1,42 @@
+# FastAPI and server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.20
+
+# Database
+supabase>=2.24.0
+
+# Google Cloud services
+google-cloud-aiplatform>=1.70.0
+google-generativeai>=0.8.0
+google-ai>=1.0.0
+google-cloud-vision>=3.11.0
+google-cloud-speech>=2.34.0
+google-cloud-bigquery>=3.38.0
+google-cloud-translate>=3.15.0
+
+# LangChain for RAG
+langchain>=0.3.0
+
+# Vector database
+pinecone>=5.0.0
+
+# External APIs
+wolframalpha>=5.1.0
+google-api-python-client>=2.187.0
+youtube-transcript-api>=1.2.0
+
+# Utilities
+pydantic>=2.10.0
+pydantic-settings>=2.12.0
+python-dotenv>=1.0.0
+redis>=7.1.0
+numpy>=2.0.0
+pandas>=2.2.0
+Pillow>=12.0.0
+xmltodict>=1.0.0
+PyPDF2>=3.0.0
+httpx>=0.27.0
+
+# Rate limiting
+slowapi>=0.1.9
