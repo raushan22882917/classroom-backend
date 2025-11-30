@@ -19,17 +19,29 @@ class EmbeddingService:
     
     def __init__(self):
         """Initialize Vertex AI and embedding model"""
-        # Set up authentication
-        self._setup_authentication()
-        
-        # Initialize Vertex AI
-        aiplatform.init(
-            project=settings.google_cloud_project,
-            location=settings.vertex_ai_location
-        )
         self.model_name = settings.vertex_ai_embedding_model
         self.model = None
         self._initialized = False
+        self._auth_setup = False
+        self._auth_error = None
+        
+        # Try to set up authentication, but don't fail if it doesn't work yet
+        # On Cloud Run, ADC will be available when the service is actually used
+        try:
+            self._setup_authentication()
+            self._auth_setup = True
+            
+            # Initialize Vertex AI
+            if settings.google_cloud_project:
+                aiplatform.init(
+                    project=settings.google_cloud_project,
+                    location=settings.vertex_ai_location
+                )
+        except Exception as e:
+            # Store the error but don't raise - will retry when service is actually used
+            self._auth_error = str(e)
+            print(f"⚠ Warning: EmbeddingService initialization deferred: {e}")
+            print("   Authentication will be retried when the service is first used.")
     
     def _setup_authentication(self):
         """
@@ -125,6 +137,25 @@ class EmbeddingService:
                     )
                 raise EmbeddingGenerationError(f"Failed to initialize embedding model: {str(e)}")
     
+    def _ensure_authenticated(self):
+        """Ensure authentication is set up, retry if needed"""
+        if not self._auth_setup:
+            try:
+                self._setup_authentication()
+                self._auth_setup = True
+                if settings.google_cloud_project:
+                    aiplatform.init(
+                        project=settings.google_cloud_project,
+                        location=settings.vertex_ai_location
+                    )
+            except Exception as e:
+                if self._auth_error:
+                    raise EmbeddingGenerationError(
+                        f"Authentication failed: {self._auth_error}. "
+                        f"Retry also failed: {str(e)}"
+                    )
+                raise EmbeddingGenerationError(f"Authentication setup failed: {str(e)}")
+    
     async def generate_embedding(self, text: str) -> List[float]:
         """
         Generate embedding for a single text
@@ -135,6 +166,8 @@ class EmbeddingService:
         Returns:
             List of floats representing the embedding vector
         """
+        # Ensure authentication is set up before using the service
+        self._ensure_authenticated()
         if not self._initialized:
             await self.initialize()
         

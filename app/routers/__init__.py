@@ -1,5 +1,6 @@
 """API route handlers"""
 
-from app.routers import health, rag
+# Don't import routers here - let them be imported on-demand
+# This prevents import-time initialization of services that may fail
 
-__all__ = ["health", "rag"]
+__all__ = []
