@@ -16,6 +16,7 @@ google-cloud-translate>=3.15.0
 
 # LangChain for RAG
 langchain>=0.3.0
+langchain-text-splitters>=0.3.0
 
 # Vector database
 pinecone>=5.0.0
