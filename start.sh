@@ -1,18 +1,25 @@
 #!/bin/bash
 # Startup script for Cloud Run with better error handling
 
-# Don't exit on error - we want to catch and show Python errors
-# set -e
+# Exit on error for critical failures only
+set -euo pipefail
 
 echo "=========================================="
 echo "Starting Classroom Backend API"
 echo "=========================================="
 
-# Read PORT from environment (Cloud Run sets this)
+# Read PORT from environment (Cloud Run sets this, default to 8080)
 PORT=${PORT:-8080}
 echo "PORT: $PORT"
+export PORT
 
-# Check required environment variables
+# Verify PORT is a number
+if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: PORT must be a number, got: $PORT"
+    exit 1
+fi
+
+# Check required environment variables (warn but don't fail)
 echo ""
 echo "Checking environment variables..."
 
@@ -28,7 +35,7 @@ REQUIRED_VARS=(
 
 MISSING_VARS=()
 for var in "${REQUIRED_VARS[@]}"; do
-    if [ -z "${!var}" ]; then
+    if [ -z "${!var:-}" ]; then
         MISSING_VARS+=("$var")
         echo "  ❌ $var: NOT SET"
     else
@@ -43,33 +50,41 @@ if [ ${#MISSING_VARS[@]} -gt 0 ]; then
     echo "=========================================="
     echo "Missing: ${MISSING_VARS[*]}"
     echo ""
-    echo "The application may fail to start or function correctly."
-    echo "Please set these in Cloud Run service configuration."
+    echo "The application will attempt to start with minimal settings."
+    echo "Some features may not work until these are configured."
     echo "=========================================="
     echo ""
 fi
 
+# Quick test - try to import the app (non-blocking)
 echo ""
-echo "Starting uvicorn server on port $PORT..."
-echo ""
+echo "Testing application import..."
+if python3 -c "from app.main import app; print('✓ App import successful')" 2>&1; then
+    echo "✓ Application can be imported"
+else
+    echo "⚠ Warning: App import check had issues, but continuing..."
+    echo "  (Application will attempt to start - check logs for details)"
+fi
 
-# Quick test - just try to import the app (fast check)
-echo "Quick import test..."
-python3 -c "from app.main import app; print('✓ App import successful')" 2>&1 || {
-    echo "⚠ Warning: App import check failed, but continuing..."
-    echo "  (This may indicate missing env vars - check logs for details)"
-}
-
 echo ""
+echo "=========================================="
 echo "Starting uvicorn server..."
+echo "Host: 0.0.0.0"
+echo "Port: $PORT"
+echo "=========================================="
 echo ""
 
-# Start uvicorn with the app - use exec to replace shell process
-# Use --timeout-keep-alive to keep connections alive
+# Start uvicorn with the app
+# Use exec to replace shell process (important for signal handling)
+# --timeout-keep-alive: Keep connections alive
+# --access-log: Enable access logging
+# --log-level: Set log level
 exec python3 -m uvicorn app.main:app \
     --host 0.0.0.0 \
-    --port $PORT \
+    --port "$PORT" \
     --log-level info \
-    --timeout-keep-alive 30
+    --timeout-keep-alive 30 \
+    --access-log \
+    --no-use-colors
 
 

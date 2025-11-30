@@ -8,22 +8,22 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # Supabase Configuration
-    supabase_url: str
-    supabase_key: str
-    supabase_service_key: str
+    supabase_url: str = ""  # Allow empty for graceful degradation
+    supabase_key: str = ""  # Allow empty for graceful degradation
+    supabase_service_key: str = ""  # Allow empty for graceful degradation
     
     # Google Cloud Configuration
-    google_cloud_project: str
+    google_cloud_project: str = ""  # Allow empty for graceful degradation
     google_application_credentials: str = ""  # Optional - if not set, will use Application Default Credentials (ADC) on Cloud Run
     
     # Gemini API
-    gemini_api_key: str
+    gemini_api_key: str = ""  # Allow empty for graceful degradation
     
     # Wolfram Alpha API
-    wolfram_app_id: str
+    wolfram_app_id: str = ""  # Allow empty for graceful degradation
     
     # YouTube Data API
-    youtube_api_key: str
+    youtube_api_key: str = ""  # Allow empty for graceful degradation
     
     # Vertex AI Configuration
     vertex_ai_location: str = "us-central1"
@@ -53,9 +53,9 @@ class Settings(BaseSettings):
     redis_password: str = ""
     
     # Application Configuration
-    app_env: str = "development"
+    app_env: str = "production"  # Default to production for Cloud Run
     app_host: str = "0.0.0.0"
-    app_port: int = 8000
+    app_port: int = 8080  # Cloud Run default port
     cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080"
     
     # Rate Limiting
