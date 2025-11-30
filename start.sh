@@ -1,8 +1,9 @@
 #!/bin/bash
 # Startup script for Cloud Run with better error handling
 
-# Exit on error for critical failures only
-set -euo pipefail
+# Don't exit on error - we want to show all errors and attempt to start
+set +e
+set -u  # Still fail on undefined variables
 
 echo "=========================================="
 echo "Starting Classroom Backend API"
@@ -13,9 +14,15 @@ PORT=${PORT:-8080}
 echo "PORT: $PORT"
 export PORT
 
-# Verify PORT is a number
+# Verify PORT is a number (critical - must exit if invalid)
 if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
     echo "ERROR: PORT must be a number, got: $PORT"
+    exit 1
+fi
+
+# Verify PORT is in valid range
+if [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+    echo "ERROR: PORT must be between 1 and 65535, got: $PORT"
     exit 1
 fi
 
@@ -59,10 +66,14 @@ fi
 # Quick test - try to import the app (non-blocking)
 echo ""
 echo "Testing application import..."
-if python3 -c "from app.main import app; print('✓ App import successful')" 2>&1; then
+IMPORT_OUTPUT=$(python3 -c "from app.main import app; print('✓ App import successful')" 2>&1)
+IMPORT_EXIT=$?
+
+if [ $IMPORT_EXIT -eq 0 ]; then
     echo "✓ Application can be imported"
 else
-    echo "⚠ Warning: App import check had issues, but continuing..."
+    echo "⚠ Warning: App import check had issues:"
+    echo "$IMPORT_OUTPUT" | head -20
     echo "  (Application will attempt to start - check logs for details)"
 fi
 
@@ -76,9 +87,8 @@ echo ""
 
 # Start uvicorn with the app
 # Use exec to replace shell process (important for signal handling)
-# --timeout-keep-alive: Keep connections alive
-# --access-log: Enable access logging
-# --log-level: Set log level
+# This is the critical command - if it fails, we exit
+set +e  # Temporarily disable exit on error for the exec
 exec python3 -m uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "$PORT" \
@@ -86,5 +96,9 @@ exec python3 -m uvicorn app.main:app \
     --timeout-keep-alive 30 \
     --access-log \
     --no-use-colors
+
+# If we get here, exec failed (shouldn't happen, but just in case)
+echo "ERROR: Failed to start uvicorn server"
+exit 1
 
 

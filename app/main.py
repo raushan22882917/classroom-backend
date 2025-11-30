@@ -79,7 +79,144 @@ except Exception as e:
     # Don't fail startup if auth setup has issues - services will handle it
     print(f"⚠ Warning: Auth setup failed during module load: {str(e)}")
     print("   Application will continue - authentication will be handled per-service.")
-from app.routers import health, rag, doubt, homework, microplan, exam, quiz, videos, hots, admin, progress, analytics, translation, ai_tutoring, teacher_tools, wellbeing, teacher, messages, notification
+
+# Import routers with error handling - app can start even if some routers fail
+_router_imports = {}
+_router_errors = []
+
+try:
+    from app.routers import health
+    _router_imports['health'] = health
+except Exception as e:
+    _router_errors.append(f"health: {str(e)}")
+    print(f"⚠ Warning: Failed to import health router: {e}")
+
+try:
+    from app.routers import rag
+    _router_imports['rag'] = rag
+except Exception as e:
+    _router_errors.append(f"rag: {str(e)}")
+    print(f"⚠ Warning: Failed to import rag router: {e}")
+
+try:
+    from app.routers import doubt
+    _router_imports['doubt'] = doubt
+except Exception as e:
+    _router_errors.append(f"doubt: {str(e)}")
+    print(f"⚠ Warning: Failed to import doubt router: {e}")
+
+try:
+    from app.routers import homework
+    _router_imports['homework'] = homework
+except Exception as e:
+    _router_errors.append(f"homework: {str(e)}")
+    print(f"⚠ Warning: Failed to import homework router: {e}")
+
+try:
+    from app.routers import microplan
+    _router_imports['microplan'] = microplan
+except Exception as e:
+    _router_errors.append(f"microplan: {str(e)}")
+    print(f"⚠ Warning: Failed to import microplan router: {e}")
+
+try:
+    from app.routers import exam
+    _router_imports['exam'] = exam
+except Exception as e:
+    _router_errors.append(f"exam: {str(e)}")
+    print(f"⚠ Warning: Failed to import exam router: {e}")
+
+try:
+    from app.routers import quiz
+    _router_imports['quiz'] = quiz
+except Exception as e:
+    _router_errors.append(f"quiz: {str(e)}")
+    print(f"⚠ Warning: Failed to import quiz router: {e}")
+
+try:
+    from app.routers import videos
+    _router_imports['videos'] = videos
+except Exception as e:
+    _router_errors.append(f"videos: {str(e)}")
+    print(f"⚠ Warning: Failed to import videos router: {e}")
+
+try:
+    from app.routers import hots
+    _router_imports['hots'] = hots
+except Exception as e:
+    _router_errors.append(f"hots: {str(e)}")
+    print(f"⚠ Warning: Failed to import hots router: {e}")
+
+try:
+    from app.routers import admin
+    _router_imports['admin'] = admin
+except Exception as e:
+    _router_errors.append(f"admin: {str(e)}")
+    print(f"⚠ Warning: Failed to import admin router: {e}")
+
+try:
+    from app.routers import progress
+    _router_imports['progress'] = progress
+except Exception as e:
+    _router_errors.append(f"progress: {str(e)}")
+    print(f"⚠ Warning: Failed to import progress router: {e}")
+
+try:
+    from app.routers import analytics
+    _router_imports['analytics'] = analytics
+except Exception as e:
+    _router_errors.append(f"analytics: {str(e)}")
+    print(f"⚠ Warning: Failed to import analytics router: {e}")
+
+try:
+    from app.routers import translation
+    _router_imports['translation'] = translation
+except Exception as e:
+    _router_errors.append(f"translation: {str(e)}")
+    print(f"⚠ Warning: Failed to import translation router: {e}")
+
+try:
+    from app.routers import ai_tutoring
+    _router_imports['ai_tutoring'] = ai_tutoring
+except Exception as e:
+    _router_errors.append(f"ai_tutoring: {str(e)}")
+    print(f"⚠ Warning: Failed to import ai_tutoring router: {e}")
+
+try:
+    from app.routers import teacher_tools
+    _router_imports['teacher_tools'] = teacher_tools
+except Exception as e:
+    _router_errors.append(f"teacher_tools: {str(e)}")
+    print(f"⚠ Warning: Failed to import teacher_tools router: {e}")
+
+try:
+    from app.routers import wellbeing
+    _router_imports['wellbeing'] = wellbeing
+except Exception as e:
+    _router_errors.append(f"wellbeing: {str(e)}")
+    print(f"⚠ Warning: Failed to import wellbeing router: {e}")
+
+try:
+    from app.routers import teacher
+    _router_imports['teacher'] = teacher
+except Exception as e:
+    _router_errors.append(f"teacher: {str(e)}")
+    print(f"⚠ Warning: Failed to import teacher router: {e}")
+
+try:
+    from app.routers import messages
+    _router_imports['messages'] = messages
+except Exception as e:
+    _router_errors.append(f"messages: {str(e)}")
+    print(f"⚠ Warning: Failed to import messages router: {e}")
+
+try:
+    from app.routers import notification
+    _router_imports['notification'] = notification
+except Exception as e:
+    _router_errors.append(f"notification: {str(e)}")
+    print(f"⚠ Warning: Failed to import notification router: {e}")
+
 from app.utils.exceptions import (
     APIException,
     api_exception_handler,
@@ -129,26 +266,51 @@ async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
 
-# Include routers
-app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(rag.router, prefix="/api", tags=["rag"])
-app.include_router(doubt.router, prefix="/api", tags=["doubt"])
-app.include_router(homework.router, prefix="/api", tags=["homework"])
-app.include_router(microplan.router, prefix="/api", tags=["microplan"])
-app.include_router(exam.router, prefix="/api", tags=["exam"])
-app.include_router(quiz.router, prefix="/api", tags=["quiz"])
-app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
-app.include_router(hots.router, prefix="/api/hots", tags=["hots"])
-app.include_router(admin.router, prefix="/api", tags=["admin"])
-app.include_router(progress.router, prefix="/api", tags=["progress"])
-app.include_router(analytics.router, prefix="/api", tags=["analytics"])
-app.include_router(translation.router, prefix="/api", tags=["translation"])
-app.include_router(ai_tutoring.router, prefix="/api", tags=["ai-tutoring"])
-app.include_router(teacher_tools.router, prefix="/api", tags=["teacher-tools"])
-app.include_router(teacher.router, prefix="/api", tags=["teacher"])
-app.include_router(wellbeing.router, prefix="/api", tags=["wellbeing"])
-app.include_router(messages.router, prefix="/api", tags=["messages"])
-app.include_router(notification.router, prefix="/api", tags=["notifications"])
+# Include routers (only those that imported successfully)
+if 'health' in _router_imports:
+    app.include_router(_router_imports['health'].router, prefix="/api", tags=["health"])
+if 'rag' in _router_imports:
+    app.include_router(_router_imports['rag'].router, prefix="/api", tags=["rag"])
+if 'doubt' in _router_imports:
+    app.include_router(_router_imports['doubt'].router, prefix="/api", tags=["doubt"])
+if 'homework' in _router_imports:
+    app.include_router(_router_imports['homework'].router, prefix="/api", tags=["homework"])
+if 'microplan' in _router_imports:
+    app.include_router(_router_imports['microplan'].router, prefix="/api", tags=["microplan"])
+if 'exam' in _router_imports:
+    app.include_router(_router_imports['exam'].router, prefix="/api", tags=["exam"])
+if 'quiz' in _router_imports:
+    app.include_router(_router_imports['quiz'].router, prefix="/api", tags=["quiz"])
+if 'videos' in _router_imports:
+    app.include_router(_router_imports['videos'].router, prefix="/api/videos", tags=["videos"])
+if 'hots' in _router_imports:
+    app.include_router(_router_imports['hots'].router, prefix="/api/hots", tags=["hots"])
+if 'admin' in _router_imports:
+    app.include_router(_router_imports['admin'].router, prefix="/api", tags=["admin"])
+if 'progress' in _router_imports:
+    app.include_router(_router_imports['progress'].router, prefix="/api", tags=["progress"])
+if 'analytics' in _router_imports:
+    app.include_router(_router_imports['analytics'].router, prefix="/api", tags=["analytics"])
+if 'translation' in _router_imports:
+    app.include_router(_router_imports['translation'].router, prefix="/api", tags=["translation"])
+if 'ai_tutoring' in _router_imports:
+    app.include_router(_router_imports['ai_tutoring'].router, prefix="/api", tags=["ai-tutoring"])
+if 'teacher_tools' in _router_imports:
+    app.include_router(_router_imports['teacher_tools'].router, prefix="/api", tags=["teacher-tools"])
+if 'teacher' in _router_imports:
+    app.include_router(_router_imports['teacher'].router, prefix="/api", tags=["teacher"])
+if 'wellbeing' in _router_imports:
+    app.include_router(_router_imports['wellbeing'].router, prefix="/api", tags=["wellbeing"])
+if 'messages' in _router_imports:
+    app.include_router(_router_imports['messages'].router, prefix="/api", tags=["messages"])
+if 'notification' in _router_imports:
+    app.include_router(_router_imports['notification'].router, prefix="/api", tags=["notifications"])
+
+# Log router import status
+if _router_errors:
+    print(f"⚠ Warning: {len(_router_errors)} router(s) failed to import: {', '.join(_router_errors)}")
+else:
+    print(f"✓ All {len(_router_imports)} routers imported successfully")
 
 # Placeholder routers for future implementation
 # app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

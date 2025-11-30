@@ -5,10 +5,12 @@ FROM python:3.11-slim as builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies needed for Python packages
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    libffi-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -45,8 +47,11 @@ ENV PORT=8080
 # Expose port (Cloud Run uses PORT env var)
 EXPOSE 8080
 
-# Install bash for startup script
-RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+# Install bash and curl for startup script and health checks
+RUN apt-get update && apt-get install -y \
+    bash \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy startup script and make it executable
 COPY start.sh ./start.sh
