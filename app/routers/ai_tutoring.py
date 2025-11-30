@@ -30,14 +30,22 @@ def get_supabase_client():
     """Get Supabase client, creating it if needed"""
     if not hasattr(get_supabase_client, '_client'):
         if not settings.supabase_url or not settings.supabase_service_key:
-            raise APIException("Supabase configuration is missing. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.", 500)
+            raise APIException(
+                code="SUPABASE_CONFIG_MISSING",
+                message="Supabase configuration is missing. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.",
+                status_code=500
+            )
         try:
             get_supabase_client._client = create_client(
                 settings.supabase_url,
                 settings.supabase_service_key
             )
         except Exception as e:
-            raise APIException(f"Failed to create Supabase client: {str(e)}", 500)
+            raise APIException(
+                code="SUPABASE_CLIENT_ERROR",
+                message=f"Failed to create Supabase client: {str(e)}",
+                status_code=500
+            )
     return get_supabase_client._client
 
 def get_ai_tutoring_service():
@@ -46,7 +54,11 @@ def get_ai_tutoring_service():
         try:
             get_ai_tutoring_service._service = AITutoringService(get_supabase_client())
         except Exception as e:
-            raise APIException(f"Failed to initialize AI tutoring service: {str(e)}", 500)
+            raise APIException(
+                code="AI_TUTORING_SERVICE_ERROR",
+                message=f"Failed to initialize AI tutoring service: {str(e)}",
+                status_code=500
+            )
     return get_ai_tutoring_service._service
 
 def get_enhanced_ai_tutor_service():
@@ -55,7 +67,11 @@ def get_enhanced_ai_tutor_service():
         try:
             get_enhanced_ai_tutor_service._service = EnhancedAITutorService(get_supabase_client())
         except Exception as e:
-            raise APIException(f"Failed to initialize enhanced AI tutor service: {str(e)}", 500)
+            raise APIException(
+                code="ENHANCED_AI_TUTOR_SERVICE_ERROR",
+                message=f"Failed to initialize enhanced AI tutor service: {str(e)}",
+                status_code=500
+            )
     return get_enhanced_ai_tutor_service._service
 
 

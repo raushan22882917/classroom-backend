@@ -246,11 +246,10 @@ async def get_user_achievements(
             "achievements": all_achievements
         }
     except Exception as e:
-        import logging
         import traceback
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error fetching achievements: {str(e)}")
-        logger.error(traceback.format_exc())
+        logger_instance = logging.getLogger(__name__)
+        logger_instance.error(f"Error fetching achievements: {str(e)}")
+        logger_instance.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch achievements: {str(e)}"
