@@ -12,7 +12,13 @@ from app.config import settings
 
 # Set up Google Cloud authentication early (before any services initialize)
 def setup_google_cloud_auth():
-    """Set up Google Cloud authentication from service account"""
+    """
+    Set up Google Cloud authentication from service account.
+    Supports multiple methods:
+    1. GOOGLE_APPLICATION_CREDENTIALS environment variable (explicit file path)
+    2. Service account JSON file path from config
+    3. Application Default Credentials (ADC) - automatic on Cloud Run
+    """
     try:
         # Check if already set in environment
         if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
@@ -23,46 +29,51 @@ def setup_google_cloud_auth():
             else:
                 print(f"⚠ Warning: GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {creds_path}")
         
-        # Get the credentials path from settings
+        # Get the credentials path from settings (if provided)
         creds_path = settings.google_application_credentials
         
-        # If path is relative, make it absolute from backend directory
-        if not os.path.isabs(creds_path):
-            # Get backend directory (where main.py is located)
-            backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            creds_path = os.path.join(backend_dir, creds_path)
-            creds_path = os.path.normpath(creds_path)
-        
-        # Check if file exists
-        if not os.path.exists(creds_path):
-            # Try alternative locations
+        # If no path configured, try to find service-account.json in common locations
+        if not creds_path:
             backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             alternative_paths = [
                 os.path.join(backend_dir, "service-account.json"),
-                os.path.join(backend_dir, "./service-account.json"),
+                "./service-account.json",
+                "service-account.json"
             ]
             
-            found = False
             for alt_path in alternative_paths:
                 alt_path = os.path.normpath(alt_path)
                 if os.path.exists(alt_path):
                     creds_path = alt_path
-                    found = True
                     break
-            
-            if not found:
-                print(f"⚠ Warning: Service account file not found at: {creds_path}")
-                print(f"   Tried: {creds_path} and alternative paths.")
-                print(f"   Some features may not work. Please set GOOGLE_APPLICATION_CREDENTIALS in .env")
-                return
         
-        # Set environment variable for Google Cloud libraries
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
-        print(f"✓ Google Cloud authentication configured from: {creds_path}")
+        # If path is relative and found, make it absolute
+        if creds_path and os.path.exists(creds_path):
+            if not os.path.isabs(creds_path):
+                backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                creds_path = os.path.join(backend_dir, creds_path)
+                creds_path = os.path.normpath(creds_path)
+            
+            # Set environment variable for Google Cloud libraries
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
+            print(f"✓ Google Cloud authentication configured from: {creds_path}")
+        else:
+            # No service account file found - will use Application Default Credentials (ADC)
+            # This is expected and works automatically on Google Cloud Run
+            import google.auth
+            try:
+                # Try to get default credentials to verify ADC is available
+                credentials, project = google.auth.default()
+                print(f"✓ Using Application Default Credentials (ADC) for Google Cloud")
+                print(f"  Project: {project}")
+            except Exception as adc_error:
+                print(f"⚠ Warning: No explicit credentials file found and ADC not available: {str(adc_error)}")
+                print(f"   On Cloud Run, the service account attached to the service will be used automatically.")
+                print(f"   For local development, set GOOGLE_APPLICATION_CREDENTIALS in .env or place service-account.json in the project root.")
         
     except Exception as e:
         print(f"⚠ Warning: Failed to set up Google Cloud authentication: {str(e)}")
-        print(f"   Some features may not work. Please check your configuration.")
+        print(f"   On Cloud Run, authentication will use the service account attached to the service.")
 
 # Initialize authentication at module load (before any services)
 setup_google_cloud_auth()

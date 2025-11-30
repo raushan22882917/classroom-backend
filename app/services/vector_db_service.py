@@ -25,7 +25,10 @@ class VectorDBService:
         self._memory_vectors: Dict[str, tuple] = {}  # id -> (vector, metadata)
     
     def _setup_authentication(self):
-        """Set up Google Cloud authentication"""
+        """
+        Set up Google Cloud authentication.
+        Supports: explicit file path, config file path, or Application Default Credentials (ADC)
+        """
         try:
             if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
                 creds_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -34,17 +37,44 @@ class VectorDBService:
                 else:
                     print(f"Warning: GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {creds_path}")
             
+            # Get the credentials path from settings (if provided)
             creds_path = settings.google_application_credentials
-            if not os.path.isabs(creds_path):
-                backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                creds_path = os.path.join(backend_dir, creds_path)
-                creds_path = os.path.normpath(creds_path)
             
-            if os.path.exists(creds_path):
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
-                print(f"✓ Google Cloud authentication configured from: {creds_path}")
-            else:
-                print(f"Warning: Service account file not found at: {creds_path}")
+            # If no path configured, try to find service-account.json
+            if not creds_path:
+                backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                alternative_paths = [
+                    os.path.join(backend_dir, "service-account.json"),
+                    "./service-account.json",
+                    "service-account.json"
+                ]
+                
+                for alt_path in alternative_paths:
+                    alt_path = os.path.normpath(alt_path)
+                    if os.path.exists(alt_path):
+                        creds_path = alt_path
+                        break
+            
+            if creds_path:
+                if not os.path.isabs(creds_path):
+                    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    creds_path = os.path.join(backend_dir, creds_path)
+                    creds_path = os.path.normpath(creds_path)
+                
+                if os.path.exists(creds_path):
+                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
+                    print(f"✓ Google Cloud authentication configured from: {creds_path}")
+                    return
+            
+            # No file found - try Application Default Credentials (ADC)
+            # This works automatically on Google Cloud Run
+            import google.auth
+            try:
+                credentials, project = google.auth.default()
+                print(f"✓ Using Application Default Credentials (ADC) for Google Cloud")
+                print(f"  Project: {project}")
+            except Exception as adc_error:
+                print(f"Warning: Service account file not found and ADC not available: {str(adc_error)}")
                 print("Falling back to in-memory vector store for development")
                 self._use_memory_store = True
         except Exception as e:

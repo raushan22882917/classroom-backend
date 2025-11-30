@@ -13,18 +13,17 @@ class TranslationService:
         """Initialize translation service"""
         try:
             # Use v3 API (TranslationServiceClient)
-            # Only initialize if credentials are available
-            import os
-            if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and not settings.google_application_credentials:
-                raise Exception("Google Cloud credentials not configured. Set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
-            
+            # Credentials will use Application Default Credentials (ADC) on Cloud Run
+            # or GOOGLE_APPLICATION_CREDENTIALS if set for local development
             self.client = translate.TranslationServiceClient()
             self.project_id = settings.google_cloud_project
             self.parent = f"projects/{self.project_id}/locations/global"
         except Exception as e:
             raise APIException(
                 code="TRANSLATION_INIT_ERROR",
-                message=f"Failed to initialize translation service: {str(e)}",
+                message=f"Failed to initialize translation service: {str(e)}. "
+                       f"On Cloud Run, ensure the service has a service account attached. "
+                       f"For local development, set GOOGLE_APPLICATION_CREDENTIALS environment variable.",
                 status_code=500
             )
     

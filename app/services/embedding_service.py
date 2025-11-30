@@ -32,7 +32,10 @@ class EmbeddingService:
         self._initialized = False
     
     def _setup_authentication(self):
-        """Set up Google Cloud authentication using service account"""
+        """
+        Set up Google Cloud authentication.
+        Supports: explicit file path, config file path, or Application Default Credentials (ADC)
+        """
         try:
             # Check if already set in environment
             if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
@@ -43,51 +46,58 @@ class EmbeddingService:
                 else:
                     print(f"Warning: GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {creds_path}")
             
-            # Get the credentials path from settings
+            # Get the credentials path from settings (if provided)
             creds_path = settings.google_application_credentials
             
-            # If path is relative, make it absolute from backend directory
-            if not os.path.isabs(creds_path):
-                # Get backend directory (parent of app directory)
+            # If no path configured, try to find service-account.json in common locations
+            if not creds_path:
                 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                creds_path = os.path.join(backend_dir, creds_path)
-                # Normalize the path
-                creds_path = os.path.normpath(creds_path)
-            
-            # Check if file exists
-            if not os.path.exists(creds_path):
-                # Try alternative locations
                 alternative_paths = [
-                    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "service-account.json"),
+                    os.path.join(backend_dir, "service-account.json"),
                     "./service-account.json",
                     "service-account.json"
                 ]
                 
-                found = False
                 for alt_path in alternative_paths:
                     alt_path = os.path.normpath(alt_path)
                     if os.path.exists(alt_path):
                         creds_path = alt_path
-                        found = True
                         break
+            
+            # If we found a file path, use it
+            if creds_path:
+                # If path is relative, make it absolute from backend directory
+                if not os.path.isabs(creds_path):
+                    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    creds_path = os.path.join(backend_dir, creds_path)
+                    creds_path = os.path.normpath(creds_path)
                 
-                if not found:
-                    raise EmbeddingGenerationError(
-                        f"Service account file not found at: {creds_path}. "
-                        f"Tried: {creds_path} and alternative paths. "
-                        f"Please ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly in .env file "
-                        f"or place service-account.json in the backend directory."
-                    )
+                if os.path.exists(creds_path):
+                    # Set environment variable for Google Cloud libraries
+                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
+                    
+                    # Verify credentials can be loaded
+                    credentials = service_account.Credentials.from_service_account_file(creds_path)
+                    if not credentials:
+                        raise EmbeddingGenerationError("Failed to load service account credentials")
+                    
+                    print(f"✓ Google Cloud authentication configured from: {creds_path}")
+                    return
             
-            # Set environment variable for Google Cloud libraries
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds_path
-            
-            # Verify credentials can be loaded
-            credentials = service_account.Credentials.from_service_account_file(creds_path)
-            if not credentials:
-                raise EmbeddingGenerationError("Failed to load service account credentials")
-            
-            print(f"✓ Google Cloud authentication configured from: {creds_path}")
+            # No file found - try Application Default Credentials (ADC)
+            # This works automatically on Google Cloud Run
+            import google.auth
+            try:
+                credentials, project = google.auth.default()
+                print(f"✓ Using Application Default Credentials (ADC) for Google Cloud")
+                print(f"  Project: {project}")
+            except Exception as adc_error:
+                raise EmbeddingGenerationError(
+                    f"No Google Cloud credentials found. "
+                    f"On Cloud Run, ensure the service has a service account attached. "
+                    f"For local development, set GOOGLE_APPLICATION_CREDENTIALS in .env or place service-account.json in the project root. "
+                    f"ADC error: {str(adc_error)}"
+                )
             
         except EmbeddingGenerationError:
             raise

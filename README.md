@@ -43,7 +43,7 @@ Edit `.env` and add your credentials:
 
 ### 4. Set Up Google Cloud Authentication
 
-Place your service account JSON file in the backend directory:
+For **local development**, place your service account JSON file in the project directory:
 
 ```bash
 # Download from Google Cloud Console
@@ -55,6 +55,12 @@ Update the `.env` file:
 ```
 GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
 ```
+
+**Note:** The `service-account.json` file is **only needed for local development**. 
+- For local development: Place the file in the project root (it's gitignored)
+- For Cloud Run deployment: Uses Application Default Credentials (ADC) automatically - no file needed!
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Cloud Run deployment instructions.
 
 ### 5. Run the Development Server
 
@@ -176,3 +182,4 @@ The application is designed to run on Google Cloud Run. See the [Deployment Guid
 ## License
 
 MIT License - See [LICENSE](../LICENSE) file for details.
+

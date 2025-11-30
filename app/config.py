@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     
     # Google Cloud Configuration
     google_cloud_project: str
-    google_application_credentials: str
+    google_application_credentials: str = ""  # Optional - if not set, will use Application Default Credentials (ADC) on Cloud Run
     
     # Gemini API
     gemini_api_key: str

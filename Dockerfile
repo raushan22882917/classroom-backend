@@ -29,18 +29,18 @@ COPY --from=builder /root/.local /root/.local
 # Copy application code
 COPY app/ ./app/
 
-# Copy service account credentials (if needed)
-# COPY service-account.json ./service-account.json
+# Note: Service account credentials are not copied - Cloud Run uses
+# Application Default Credentials (ADC) via the service account attached to the service
 
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
 
-# Expose port
+# Cloud Run will set PORT environment variable, default to 8000
+ENV PORT=8000
+
+# Expose port (Cloud Run uses PORT env var, but we keep this for compatibility)
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/health')"
-
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Cloud Run sets PORT env var automatically, so we use it
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
