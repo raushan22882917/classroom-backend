@@ -1,7 +1,8 @@
 #!/bin/bash
 # Startup script for Cloud Run with better error handling
 
-set -e
+# Don't exit on error - we want to catch and show Python errors
+# set -e
 
 echo "=========================================="
 echo "Starting Classroom Backend API"
@@ -52,7 +53,31 @@ echo ""
 echo "Starting uvicorn server on port $PORT..."
 echo ""
 
-# Start uvicorn with the app
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Test application startup using test script
+echo "Testing application startup..."
+if python3 test_startup.py 2>&1; then
+    echo "✓ Startup tests passed"
+else
+    echo ""
+    echo "=========================================="
+    echo "ERROR: Application startup tests failed!"
+    echo "=========================================="
+    echo "Check the output above for details."
+    echo ""
+    echo "Common issues:"
+    echo "  1. Missing required environment variables"
+    echo "  2. Configuration validation errors"
+    echo "  3. Python import errors"
+    echo ""
+    echo "=========================================="
+    exit 1
+fi
+
+echo ""
+echo "Starting uvicorn server..."
+echo ""
+
+# Start uvicorn with the app - use exec to replace shell process
+exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
 
 

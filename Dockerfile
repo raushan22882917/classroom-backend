@@ -29,6 +29,9 @@ COPY --from=builder /root/.local /root/.local
 # Copy application code
 COPY app/ ./app/
 
+# Copy test script
+COPY test_startup.py ./test_startup.py
+
 # Note: Service account credentials are not copied - Cloud Run uses
 # Application Default Credentials (ADC) via the service account attached to the service
 
@@ -42,8 +45,12 @@ ENV PORT=8080
 # Expose port (Cloud Run uses PORT env var)
 EXPOSE 8080
 
-# Copy startup script
+# Install bash for startup script
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+
+# Copy startup script and make it executable
 COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
 
 # Run the application using startup script (provides better error messages)
 CMD ["./start.sh"]
