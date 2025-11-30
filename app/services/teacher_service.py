@@ -4,11 +4,14 @@ from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Any
 import json
 import re
-from google import genai
+import google.generativeai as genai
 from supabase import Client
 from app.config import settings
 from app.models.base import Subject
 from app.utils.exceptions import APIException
+
+# Configure Gemini
+genai.configure(api_key=settings.gemini_api_key)
 
 
 class TeacherService:
@@ -16,9 +19,14 @@ class TeacherService:
     
     def __init__(self, supabase_client: Client):
         self.supabase = supabase_client
-        # Initialize Gemini client with API key
-        self.client = genai.Client(api_key=settings.gemini_api_key)
-        self.model = "gemini-3-pro-preview"
+        # Initialize Gemini model - use flash for speed, fallback to pro
+        try:
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
+        except:
+            try:
+                self.model = genai.GenerativeModel('gemini-3-pro-preview')
+            except:
+                self.model = genai.GenerativeModel('gemini-pro')
     
     async def generate_lesson_plan(
         self,
@@ -88,10 +96,7 @@ Format as JSON:
   }}
 }}"""
 
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt
-            )
+            response = self.model.generate_content(prompt)
             plan_text = response.text
             
             # Parse JSON response
@@ -176,10 +181,7 @@ Format as JSON:
   "estimated_time_minutes": 15
 }}"""
 
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt
-            )
+            response = self.model.generate_content(prompt)
             assessment_text = response.text
             
             # Parse JSON response
@@ -324,10 +326,7 @@ Format as JSON:
   "suggested_follow_up": "..."  // if applicable
 }}"""
 
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt
-            )
+            response = self.model.generate_content(prompt)
             message_text = response.text
             
             # Parse JSON response

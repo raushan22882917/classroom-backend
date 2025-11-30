@@ -9,7 +9,6 @@ supabase>=2.24.0
 # Google Cloud services
 google-cloud-aiplatform>=1.70.0
 google-generativeai>=0.8.0
-google-ai>=1.0.0
 google-cloud-vision>=3.11.0
 google-cloud-speech>=2.34.0
 google-cloud-bigquery>=3.38.0
