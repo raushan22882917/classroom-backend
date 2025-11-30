@@ -31,22 +31,31 @@ def get_supabase_client():
     if not hasattr(get_supabase_client, '_client'):
         if not settings.supabase_url or not settings.supabase_service_key:
             raise APIException("Supabase configuration is missing. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.", 500)
-        get_supabase_client._client = create_client(
-            settings.supabase_url,
-            settings.supabase_service_key
-        )
+        try:
+            get_supabase_client._client = create_client(
+                settings.supabase_url,
+                settings.supabase_service_key
+            )
+        except Exception as e:
+            raise APIException(f"Failed to create Supabase client: {str(e)}", 500)
     return get_supabase_client._client
 
 def get_ai_tutoring_service():
     """Get AI tutoring service, creating it if needed"""
     if not hasattr(get_ai_tutoring_service, '_service'):
-        get_ai_tutoring_service._service = AITutoringService(get_supabase_client())
+        try:
+            get_ai_tutoring_service._service = AITutoringService(get_supabase_client())
+        except Exception as e:
+            raise APIException(f"Failed to initialize AI tutoring service: {str(e)}", 500)
     return get_ai_tutoring_service._service
 
 def get_enhanced_ai_tutor_service():
     """Get enhanced AI tutor service, creating it if needed"""
     if not hasattr(get_enhanced_ai_tutor_service, '_service'):
-        get_enhanced_ai_tutor_service._service = EnhancedAITutorService(get_supabase_client())
+        try:
+            get_enhanced_ai_tutor_service._service = EnhancedAITutorService(get_supabase_client())
+        except Exception as e:
+            raise APIException(f"Failed to initialize enhanced AI tutor service: {str(e)}", 500)
     return get_enhanced_ai_tutor_service._service
 
 
