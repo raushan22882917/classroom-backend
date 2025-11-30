@@ -14,15 +14,40 @@ from app.config import settings
 
 router = APIRouter(prefix="/ai-tutoring", tags=["AI Tutoring"])
 
-# Initialize Supabase client
-supabase_client = create_client(
-    settings.supabase_url,
-    settings.supabase_service_key
-)
 
-# Initialize services
-ai_tutoring_service = AITutoringService(supabase_client)
-enhanced_ai_tutor_service = EnhancedAITutorService(supabase_client)
+@router.get("/health")
+async def health_check():
+    """Health check endpoint for AI tutoring router"""
+    return {
+        "status": "ok",
+        "router": "ai-tutoring",
+        "message": "AI Tutoring router is active"
+    }
+
+
+# Initialize Supabase client (lazy initialization to handle missing settings)
+def get_supabase_client():
+    """Get Supabase client, creating it if needed"""
+    if not hasattr(get_supabase_client, '_client'):
+        if not settings.supabase_url or not settings.supabase_service_key:
+            raise APIException("Supabase configuration is missing. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY.", 500)
+        get_supabase_client._client = create_client(
+            settings.supabase_url,
+            settings.supabase_service_key
+        )
+    return get_supabase_client._client
+
+def get_ai_tutoring_service():
+    """Get AI tutoring service, creating it if needed"""
+    if not hasattr(get_ai_tutoring_service, '_service'):
+        get_ai_tutoring_service._service = AITutoringService(get_supabase_client())
+    return get_ai_tutoring_service._service
+
+def get_enhanced_ai_tutor_service():
+    """Get enhanced AI tutor service, creating it if needed"""
+    if not hasattr(get_enhanced_ai_tutor_service, '_service'):
+        get_enhanced_ai_tutor_service._service = EnhancedAITutorService(get_supabase_client())
+    return get_enhanced_ai_tutor_service._service
 
 
 @router.post("/feedback")
@@ -37,7 +62,8 @@ async def get_personalized_feedback(request: FeedbackRequest):
         Personalized feedback with suggestions
     """
     try:
-        feedback = await ai_tutoring_service.get_personalized_feedback(
+        service = get_ai_tutoring_service()
+        feedback = await service.get_personalized_feedback(
             user_id=request.user_id,
             content=request.content,
             subject=request.subject,
@@ -68,7 +94,8 @@ async def generate_study_plan(request: StudyPlanRequest):
         Detailed study plan
     """
     try:
-        study_plan = await ai_tutoring_service.generate_study_plan(
+        service = get_ai_tutoring_service()
+        study_plan = await service.generate_study_plan(
             user_id=request.user_id,
             subject=request.subject,
             days=request.days,
@@ -99,7 +126,8 @@ async def answer_question(request: QuestionAnswerRequest):
         Answer with explanation and resources
     """
     try:
-        answer = await ai_tutoring_service.answer_question(
+        service = get_ai_tutoring_service()
+        answer = await service.answer_question(
             user_id=request.user_id,
             question=request.question,
             subject=request.subject,
@@ -137,7 +165,8 @@ async def create_session(request: CreateSessionRequest):
         Created session with welcome message
     """
     try:
-        session = await enhanced_ai_tutor_service.create_session(
+        service = get_enhanced_ai_tutor_service()
+        session = await service.create_session(
             user_id=request.user_id,
             session_name=request.session_name,
             subject=request.subject
@@ -173,7 +202,8 @@ async def get_sessions(
         List of sessions
     """
     try:
-        sessions = await enhanced_ai_tutor_service.get_user_sessions(
+        service = get_enhanced_ai_tutor_service()
+        sessions = await service.get_user_sessions(
             user_id=user_id,
             limit=limit,
             offset=offset
@@ -208,7 +238,8 @@ async def get_session_messages(
         List of messages
     """
     try:
-        messages = await enhanced_ai_tutor_service.get_session_messages(
+        service = get_enhanced_ai_tutor_service()
+        messages = await service.get_session_messages(
             session_id=session_id,
             limit=limit
         )
@@ -238,7 +269,8 @@ async def send_message(request: SendMessageRequest):
         User message and AI response
     """
     try:
-        result = await enhanced_ai_tutor_service.send_message(
+        service = get_enhanced_ai_tutor_service()
+        result = await service.send_message(
             session_id=request.session_id,
             user_id=request.user_id,
             content=request.content,
@@ -270,7 +302,8 @@ async def generate_lesson_plan(request: GenerateLessonPlanRequest):
         Generated lesson plan
     """
     try:
-        lesson_plan = await enhanced_ai_tutor_service.generate_performance_based_lesson_plan(
+        service = get_enhanced_ai_tutor_service()
+        lesson_plan = await service.generate_performance_based_lesson_plan(
             user_id=request.user_id,
             subject=request.subject,
             days=request.days,
@@ -316,7 +349,8 @@ async def get_lesson_plans(
             except ValueError:
                 pass
         
-        lesson_plans = await enhanced_ai_tutor_service.get_lesson_plans(
+        service = get_enhanced_ai_tutor_service()
+        lesson_plans = await service.get_lesson_plans(
             user_id=user_id,
             subject=subject_enum,
             is_active=is_active
@@ -353,7 +387,8 @@ async def get_teacher_student_sessions(
         List of student sessions
     """
     try:
-        sessions = await enhanced_ai_tutor_service.get_teacher_student_sessions(
+        service = get_enhanced_ai_tutor_service()
+        sessions = await service.get_teacher_student_sessions(
             teacher_id=teacher_id,
             student_id=student_id,
             limit=limit
