@@ -77,5 +77,40 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-# Global settings instance
-settings = Settings()
+# Global settings instance with error handling
+# Note: Settings validation errors will be caught and displayed by startup script
+try:
+    settings = Settings()
+except Exception as e:
+    import os
+    # On Cloud Run, provide detailed error but don't exit immediately
+    # This allows health checks to still work and better error messages
+    error_msg = f"""
+{'=' * 80}
+ERROR: Failed to load required environment variables!
+{'=' * 80}
+Error: {str(e)}
+
+Required environment variables that are missing:
+"""
+    # Check which specific variables are missing
+    required_vars = [
+        "SUPABASE_URL", "SUPABASE_KEY", "SUPABASE_SERVICE_KEY",
+        "GOOGLE_CLOUD_PROJECT", "GEMINI_API_KEY",
+        "WOLFRAM_APP_ID", "YOUTUBE_API_KEY"
+    ]
+    for var in required_vars:
+        if not os.getenv(var):
+            error_msg += f"  ❌ {var}\n"
+    
+    error_msg += f"""
+{'=' * 80}
+Please set these in Cloud Run service configuration:
+  gcloud run services update classroom-backend \\
+    --set-env-vars "SUPABASE_URL=...,SUPABASE_KEY=..." \\
+    --region us-central1
+{'=' * 80}
+"""
+    print(error_msg)
+    # Re-raise so we can see the exact validation error
+    raise

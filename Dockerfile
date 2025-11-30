@@ -42,6 +42,8 @@ ENV PORT=8080
 # Expose port (Cloud Run uses PORT env var)
 EXPOSE 8080
 
-# Run the application
-# Cloud Run sets PORT env var automatically, we read it at runtime
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+# Copy startup script
+COPY start.sh ./start.sh
+
+# Run the application using startup script (provides better error messages)
+CMD ["./start.sh"]

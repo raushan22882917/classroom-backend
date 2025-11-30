@@ -69,7 +69,19 @@ YOUTUBE_API_KEY=your_youtube_api_key
 
 For Cloud Run, these will be set as environment variables or secrets.
 
-### 4. Set Cloud Run Environment Variables
+### 4. Set Cloud Run Environment Variables (REQUIRED!)
+
+⚠️ **IMPORTANT**: The application requires these environment variables to start. Without them, the container will fail to start.
+
+**Required environment variables:**
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_KEY` - Your Supabase anon key  
+- `SUPABASE_SERVICE_KEY` - Your Supabase service role key
+- `GOOGLE_CLOUD_PROJECT` - Your GCP project ID
+- `GEMINI_API_KEY` - Google Gemini API key
+- `WOLFRAM_APP_ID` - Wolfram Alpha App ID
+- `YOUTUBE_API_KEY` - YouTube Data API key
+- `PORT` - Automatically set by Cloud Run (defaults to 8080)
 
 You have two options:
 
