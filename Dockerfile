@@ -35,12 +35,13 @@ COPY app/ ./app/
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
 
-# Cloud Run will set PORT environment variable, default to 8000
-ENV PORT=8000
+# Cloud Run will set PORT environment variable (defaults to 8080)
+# We'll read it from the environment at runtime
+ENV PORT=8080
 
-# Expose port (Cloud Run uses PORT env var, but we keep this for compatibility)
-EXPOSE 8000
+# Expose port (Cloud Run uses PORT env var)
+EXPOSE 8080
 
 # Run the application
-# Cloud Run sets PORT env var automatically, so we use it
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Cloud Run sets PORT env var automatically, we read it at runtime
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

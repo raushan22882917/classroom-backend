@@ -60,23 +60,25 @@ def setup_google_cloud_auth():
         else:
             # No service account file found - will use Application Default Credentials (ADC)
             # This is expected and works automatically on Google Cloud Run
-            import google.auth
-            try:
-                # Try to get default credentials to verify ADC is available
-                credentials, project = google.auth.default()
-                print(f"✓ Using Application Default Credentials (ADC) for Google Cloud")
-                print(f"  Project: {project}")
-            except Exception as adc_error:
-                print(f"⚠ Warning: No explicit credentials file found and ADC not available: {str(adc_error)}")
-                print(f"   On Cloud Run, the service account attached to the service will be used automatically.")
-                print(f"   For local development, set GOOGLE_APPLICATION_CREDENTIALS in .env or place service-account.json in the project root.")
+            # Don't verify ADC here - it will be available when services need it
+            # Verification would block startup unnecessarily
+            print(f"✓ Will use Application Default Credentials (ADC) for Google Cloud when needed")
+            print(f"   On Cloud Run, the service account attached to the service will be used automatically.")
         
     except Exception as e:
+        # Don't block startup - authentication will be handled when services initialize
         print(f"⚠ Warning: Failed to set up Google Cloud authentication: {str(e)}")
         print(f"   On Cloud Run, authentication will use the service account attached to the service.")
+        print(f"   Application will continue to start - authentication will be retried when services need it.")
 
-# Initialize authentication at module load (before any services)
-setup_google_cloud_auth()
+# Initialize authentication at module load (non-blocking)
+# On Cloud Run, ADC will work automatically when services need credentials
+try:
+    setup_google_cloud_auth()
+except Exception as e:
+    # Don't fail startup if auth setup has issues - services will handle it
+    print(f"⚠ Warning: Auth setup failed during module load: {str(e)}")
+    print("   Application will continue - authentication will be handled per-service.")
 from app.routers import health, rag, doubt, homework, microplan, exam, quiz, videos, hots, admin, progress, analytics, translation, ai_tutoring, teacher_tools, wellbeing, teacher, messages, notification
 from app.utils.exceptions import (
     APIException,
@@ -144,8 +146,11 @@ app.include_router(notification.router, prefix="/api", tags=["notifications"])
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
+    port = os.getenv("PORT", str(settings.app_port))
     print(f"Starting Class 12 Learning Platform API in {settings.app_env} mode")
+    print(f"Listening on port: {port}")
     print(f"CORS enabled for origins: {settings.cors_origins_list}")
+    # Services will initialize lazily when needed - don't block startup
 
 
 @app.on_event("shutdown")
@@ -156,9 +161,10 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.getenv("PORT", settings.app_port))
     uvicorn.run(
         "app.main:app",
         host=settings.app_host,
-        port=settings.app_port,
+        port=port,
         reload=settings.app_env == "development"
     )
