@@ -271,16 +271,8 @@ async def root():
 from fastapi import Request, Query
 from fastapi.responses import JSONResponse
 
-@app.get("/ai-tutoring/sessions")
-async def ai_tutoring_sessions_alias(
-    user_id: str = Query(..., description="User ID"),
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0)
-):
-    """
-    Alias route for /ai-tutoring/sessions -> /api/ai-tutoring/sessions
-    This maintains backward compatibility for frontend calls that omit the /api prefix
-    """
+async def _handle_ai_tutoring_sessions(user_id: str, limit: int, offset: int):
+    """Helper function to handle AI tutoring sessions requests"""
     # Check if the router is available
     if 'ai_tutoring' not in _router_imports:
         return JSONResponse(
@@ -306,6 +298,69 @@ async def ai_tutoring_sessions_alias(
                 "error": {
                     "code": "INTERNAL_SERVER_ERROR",
                     "message": f"Failed to fetch sessions: {str(e)}",
+                    "retryable": True
+                }
+            }
+        )
+
+@app.get("/ai-tutoring/sessions")
+async def ai_tutoring_sessions_alias(
+    user_id: str = Query(..., description="User ID"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Alias route for /ai-tutoring/sessions -> /api/ai-tutoring/sessions
+    This maintains backward compatibility for frontend calls that omit the /api prefix
+    """
+    return await _handle_ai_tutoring_sessions(user_id, limit, offset)
+
+@app.get("/api/ai-tutoring/sessions")
+async def ai_tutoring_sessions_api(
+    user_id: str = Query(..., description="User ID"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Direct route for /api/ai-tutoring/sessions
+    This ensures the endpoint works even if router import fails
+    """
+    return await _handle_ai_tutoring_sessions(user_id, limit, offset)
+
+@app.post("/api/ai-tutoring/sessions")
+async def ai_tutoring_create_session_api(request: Request):
+    """
+    Direct route for POST /api/ai-tutoring/sessions
+    This ensures the endpoint works even if router import fails
+    """
+    # Check if the router is available
+    if 'ai_tutoring' not in _router_imports:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "AI Tutoring service is not available",
+                    "retryable": True
+                }
+            }
+        )
+    
+    # Import and call the actual handler
+    try:
+        from app.routers.ai_tutoring import create_session
+        from app.models.ai_features import CreateSessionRequest
+        # Parse request body
+        body = await request.json()
+        session_request = CreateSessionRequest(**body)
+        return await create_session(session_request)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": f"Failed to create session: {str(e)}",
                     "retryable": True
                 }
             }
