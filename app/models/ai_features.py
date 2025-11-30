@@ -88,6 +88,11 @@ class BatchTranslationRequest(BaseModel):
     source_language: Optional[str] = Field(default=None, min_length=2, max_length=5)
 
 
+class LanguageDetectionRequest(BaseModel):
+    """Request model for language detection"""
+    text: str = Field(..., min_length=1)
+
+
 class CreateSessionRequest(BaseModel):
     """Request model for creating AI tutor session"""
     user_id: str

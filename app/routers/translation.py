@@ -1,7 +1,7 @@
 """Translation endpoints for multilingual support"""
 
 from fastapi import APIRouter, HTTPException, status
-from app.models.ai_features import TranslationRequest, BatchTranslationRequest
+from app.models.ai_features import TranslationRequest, BatchTranslationRequest, LanguageDetectionRequest
 from app.services.translation_service import TranslationService
 from app.utils.exceptions import APIException
 
@@ -95,22 +95,22 @@ async def translate_batch(request: BatchTranslationRequest):
 
 
 @router.post("/detect")
-async def detect_language(text: str):
+async def detect_language(request: LanguageDetectionRequest):
     """
     Detect the language of text
     
     Args:
-        text: Text to detect language for
+        request: Language detection request with text
     
     Returns:
         Detected language and confidence
     """
     try:
         service = get_translation_service()
-        result = service.detect_language(text)
+        result = service.detect_language(request.text)
         return {
             "success": True,
-            "text": text,
+            "text": request.text,
             "detected_language": result['language'],
             "confidence": result['confidence']
         }

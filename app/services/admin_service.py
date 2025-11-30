@@ -94,8 +94,9 @@ class AdminService:
             
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to fetch dashboard metrics: {str(e)}"
+                code="DASHBOARD_METRICS_ERROR",
+                message=f"Failed to fetch dashboard metrics: {str(e)}",
+                status_code=500
             )
     
     async def _get_flagged_students(self) -> List[StudentAlert]:
@@ -275,8 +276,9 @@ class AdminService:
             
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to fetch students: {str(e)}"
+                code="FETCH_STUDENTS_ERROR",
+                message=f"Failed to fetch students: {str(e)}",
+                status_code=500
             )
     
     async def get_student_profile(self, student_id: str) -> StudentDetailedProfile:
@@ -298,8 +300,9 @@ class AdminService:
             
             if not progress_response.data:
                 raise APIException(
-                    status_code=404,
-                    detail=f"Student {student_id} not found"
+                    code="STUDENT_NOT_FOUND",
+                    message=f"Student {student_id} not found",
+                    status_code=404
                 )
             
             # Aggregate progress by subject
@@ -407,8 +410,9 @@ class AdminService:
             raise
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to fetch student profile: {str(e)}"
+                code="FETCH_STUDENT_PROFILE_ERROR",
+                message=f"Failed to fetch student profile: {str(e)}",
+                status_code=500
             )
     
     async def export_students_data(
@@ -464,8 +468,9 @@ class AdminService:
             
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to export student data: {str(e)}"
+                code="EXPORT_STUDENT_DATA_ERROR",
+                message=f"Failed to export student data: {str(e)}",
+                status_code=500
             )
 
 

@@ -266,6 +266,51 @@ async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
 
+# Add alias routes for backward compatibility (proxy /ai-tutoring/* to /api/ai-tutoring/*)
+# This allows frontend to call /ai-tutoring/sessions instead of /api/ai-tutoring/sessions
+from fastapi import Request, Query
+from fastapi.responses import JSONResponse
+
+@app.get("/ai-tutoring/sessions")
+async def ai_tutoring_sessions_alias(
+    user_id: str = Query(..., description="User ID"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Alias route for /ai-tutoring/sessions -> /api/ai-tutoring/sessions
+    This maintains backward compatibility for frontend calls that omit the /api prefix
+    """
+    # Check if the router is available
+    if 'ai_tutoring' not in _router_imports:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "AI Tutoring service is not available",
+                    "retryable": True
+                }
+            }
+        )
+    
+    # Import and call the actual handler
+    try:
+        from app.routers.ai_tutoring import get_sessions
+        # Call the actual handler function
+        return await get_sessions(user_id=user_id, limit=limit, offset=offset)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": f"Failed to fetch sessions: {str(e)}",
+                    "retryable": True
+                }
+            }
+        )
+
 # Include routers (only those that imported successfully)
 if 'health' in _router_imports:
     app.include_router(_router_imports['health'].router, prefix="/api", tags=["health"])

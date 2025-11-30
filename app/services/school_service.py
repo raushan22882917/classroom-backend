@@ -478,9 +478,17 @@ class SchoolService:
                         
                         # Check for common errors
                         if "already registered" in error_detail.lower() or "already exists" in error_detail.lower() or "user already" in error_detail.lower():
-                            raise APIException(f"User with email {email} already exists", 400)
+                            raise APIException(
+                                code="USER_ALREADY_EXISTS",
+                                message=f"User with email {email} already exists",
+                                status_code=400
+                            )
                         
-                        raise APIException(f"Error creating user: {error_detail}", response.status_code)
+                        raise APIException(
+                            code="CREATE_USER_ERROR",
+                            message=f"Error creating user: {error_detail}",
+                            status_code=response.status_code
+                        )
                     
                     try:
                         auth_user = response.json()

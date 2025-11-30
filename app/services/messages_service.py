@@ -95,11 +95,19 @@ class MessagesService:
                 .execute()
             
             if not conv_response.data:
-                raise APIException(status_code=404, detail="Conversation not found")
+                raise APIException(
+                    code="CONVERSATION_NOT_FOUND",
+                    message="Conversation not found",
+                    status_code=404
+                )
             
             conv = conv_response.data[0]
             if conv["participant1_id"] != user_id and conv["participant2_id"] != user_id:
-                raise APIException(status_code=403, detail="Access denied")
+                raise APIException(
+                    code="ACCESS_DENIED",
+                    message="Access denied",
+                    status_code=403
+                )
             
             # Get messages
             response = supabase.table("messages")\
@@ -131,8 +139,9 @@ class MessagesService:
             raise
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to get messages: {str(e)}"
+                code="GET_MESSAGES_ERROR",
+                message=f"Failed to get messages: {str(e)}",
+                status_code=500
             )
     
     async def create_or_get_conversation(
@@ -186,8 +195,9 @@ class MessagesService:
             
         except Exception as e:
             raise APIException(
-                status_code=500,
-                detail=f"Failed to create conversation: {str(e)}"
+                code="CREATE_CONVERSATION_ERROR",
+                message=f"Failed to create conversation: {str(e)}",
+                status_code=500
             )
     
     async def send_message(self, request: MessageCreate) -> Message:
@@ -202,17 +212,29 @@ class MessagesService:
                 .execute()
             
             if not conv_response.data:
-                raise APIException(status_code=404, detail="Conversation not found")
+                raise APIException(
+                    code="CONVERSATION_NOT_FOUND",
+                    message="Conversation not found",
+                    status_code=404
+                )
             
             conv = conv_response.data[0]
             if conv["participant1_id"] != request.sender_id and conv["participant2_id"] != request.sender_id:
-                raise APIException(status_code=403, detail="Access denied")
+                raise APIException(
+                    code="ACCESS_DENIED",
+                    message="Access denied",
+                    status_code=403
+                )
             
             # Determine receiver
             receiver_id = conv["participant2_id"] if conv["participant1_id"] == request.sender_id else conv["participant1_id"]
             
             if request.receiver_id != receiver_id:
-                raise APIException(status_code=400, detail="Receiver ID mismatch")
+                raise APIException(
+                    code="RECEIVER_ID_MISMATCH",
+                    message="Receiver ID mismatch",
+                    status_code=400
+                )
             
             # Insert message
             insert_response = supabase.table("messages")\
@@ -375,11 +397,19 @@ Only return the JSON array, no additional text:"""
                 .execute()
             
             if not msg_response.data:
-                raise APIException(status_code=404, detail="Message not found")
+                raise APIException(
+                    code="MESSAGE_NOT_FOUND",
+                    message="Message not found",
+                    status_code=404
+                )
             
             msg = msg_response.data[0]
             if msg["receiver_id"] != user_id:
-                raise APIException(status_code=403, detail="Access denied")
+                raise APIException(
+                    code="ACCESS_DENIED",
+                    message="Access denied",
+                    status_code=403
+                )
             
             # Update message
             update_response = supabase.table("messages")\

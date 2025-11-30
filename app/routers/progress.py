@@ -234,9 +234,8 @@ async def get_user_achievements(
                         all_achievements.append(achievement_with_topic)
             except Exception as e:
                 # Skip records with invalid achievement data
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(f"Skipping record with invalid achievements: {str(e)}")
+                logger_instance = logging.getLogger(__name__)
+                logger_instance.warning(f"Skipping record with invalid achievements: {str(e)}")
                 continue
         
         # Sort by earned_at date (most recent first)
