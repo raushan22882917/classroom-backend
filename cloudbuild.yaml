@@ -35,6 +35,7 @@ steps:
       - '--startup-cpu-boost'
       - '--max-instances'
       - '10'
+      - '--cpu-boost'
       - '--set-env-vars'
       - 'PORT=8080'
 

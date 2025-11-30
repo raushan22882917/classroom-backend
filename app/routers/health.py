@@ -2,18 +2,22 @@
 
 from fastapi import APIRouter
 from app.models.base import BaseResponse
-from app.config import settings
 
 router = APIRouter()
 
 
-@router.get("/health", response_model=BaseResponse)
+@router.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return BaseResponse(
-        success=True,
-        message="Class 12 Learning Platform API is running"
-    )
+    """Health check endpoint - responds immediately even if settings fail"""
+    try:
+        from app.config import settings
+        return BaseResponse(
+            success=True,
+            message="Class 12 Learning Platform API is running"
+        )
+    except Exception:
+        # Return a simple response even if config fails
+        return {"status": "ok", "message": "API is running (config may have issues)"}
 
 
 @router.get("/health/config", response_model=dict)

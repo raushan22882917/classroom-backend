@@ -108,14 +108,26 @@ app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# Configure CORS
+# Configure CORS - use defaults if settings fail to load
+try:
+    cors_origins = settings.cors_origins_list
+except Exception:
+    # Default CORS origins if settings fail
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add a minimal root endpoint that responds immediately (for startup probe)
+@app.get("/")
+async def root():
+    """Root endpoint - responds immediately for startup probe"""
+    return {"status": "ok", "message": "Classroom Backend API"}
 
 # Include routers
 app.include_router(health.router, prefix="/api", tags=["health"])

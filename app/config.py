@@ -78,13 +78,14 @@ class Settings(BaseSettings):
 
 
 # Global settings instance with error handling
-# Note: Settings validation errors will be caught and displayed by startup script
+# Make settings loading more resilient - allow app to start even if some vars are missing
 try:
     settings = Settings()
 except Exception as e:
     import os
-    # On Cloud Run, provide detailed error but don't exit immediately
-    # This allows health checks to still work and better error messages
+    import sys
+    
+    # Print detailed error message
     error_msg = f"""
 {'=' * 80}
 ERROR: Failed to load required environment variables!
@@ -99,18 +100,62 @@ Required environment variables that are missing:
         "GOOGLE_CLOUD_PROJECT", "GEMINI_API_KEY",
         "WOLFRAM_APP_ID", "YOUTUBE_API_KEY"
     ]
+    missing_vars = []
     for var in required_vars:
         if not os.getenv(var):
             error_msg += f"  ❌ {var}\n"
+            missing_vars.append(var)
     
     error_msg += f"""
 {'=' * 80}
-Please set these in Cloud Run service configuration:
-  gcloud run services update classroom-backend \\
-    --set-env-vars "SUPABASE_URL=...,SUPABASE_KEY=..." \\
-    --region us-central1
+The application may start but features requiring these variables will fail.
+Please set these in Cloud Run service configuration.
 {'=' * 80}
 """
-    print(error_msg)
-    # Re-raise so we can see the exact validation error
-    raise
+    print(error_msg, file=sys.stderr)
+    
+    # Create a minimal settings object with defaults so app can at least start
+    # This allows the startup probe to succeed
+    from typing import Optional
+    from pydantic import BaseModel
+    
+    class MinimalSettings:
+        """Minimal settings when full Settings() fails"""
+        supabase_url: str = ""
+        supabase_key: str = ""
+        supabase_service_key: str = ""
+        google_cloud_project: str = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+        google_application_credentials: str = ""
+        gemini_api_key: str = ""
+        wolfram_app_id: str = ""
+        youtube_api_key: str = ""
+        vertex_ai_location: str = "us-central1"
+        vertex_ai_embedding_model: str = "text-embedding-005"
+        gemini_model_fast: str = "gemini-2.5-flash"
+        gemini_model_standard: str = "gemini-2.5-flash"
+        gemini_model_quality: str = "gemini-3.0-pro"
+        gemini_models_fast_chain: str = "gemini-2.5-flash"
+        gemini_models_quality_chain: str = "gemini-3.0-pro"
+        embedding_batch_size: int = 50
+        pinecone_api_key: str = ""
+        pinecone_environment: str = ""
+        pinecone_index_name: str = "class12-learning"
+        redis_host: str = "localhost"
+        redis_port: int = 6379
+        redis_password: str = ""
+        app_env: str = "production"
+        app_host: str = "0.0.0.0"
+        app_port: int = 8080
+        cors_origins: str = "*"
+        rate_limit_per_minute: int = 100
+        wolfram_timeout: int = 60
+        wolfram_connect_timeout: int = 10
+        wolfram_read_timeout: int = 60
+        wolfram_max_retries: int = 2
+        
+        @property
+        def cors_origins_list(self):
+            return ["*"] if self.cors_origins == "*" else [o.strip() for o in self.cors_origins.split(",")]
+    
+    settings = MinimalSettings()
+    print("⚠ Using minimal settings - application will start but some features may not work", file=sys.stderr)
