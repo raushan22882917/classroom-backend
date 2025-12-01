@@ -69,8 +69,10 @@ class Settings(BaseSettings):
     
     @property
     def cors_origins_list(self) -> List[str]:
-        """Parse CORS origins from comma-separated string"""
-        return [origin.strip() for origin in self.cors_origins.split(",")]
+        """Parse CORS origins from comma or semicolon-separated string"""
+        # Support both comma and semicolon separators
+        separator = ";" if ";" in self.cors_origins else ","
+        return [origin.strip() for origin in self.cors_origins.split(separator)]
     
     class Config:
         env_file = ".env"
@@ -156,7 +158,11 @@ Please set these in Cloud Run service configuration.
         
         @property
         def cors_origins_list(self):
-            return ["*"] if self.cors_origins == "*" else [o.strip() for o in self.cors_origins.split(",")]
+            if self.cors_origins == "*":
+                return ["*"]
+            # Support both comma and semicolon separators
+            separator = ";" if ";" in self.cors_origins else ","
+            return [o.strip() for o in self.cors_origins.split(separator)]
     
     settings = MinimalSettings()
     print("⚠ Using minimal settings - application will start but some features may not work", file=sys.stderr)

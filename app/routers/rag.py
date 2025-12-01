@@ -242,6 +242,30 @@ async def process_rag_query(query: RAGQuery):
         error_message = str(e)
         logger.warning(f"RAG pipeline error (will fallback to direct Gemini): {error_message}")
         
+        # Check if it's an authentication error - provide user-friendly message
+        is_auth_error = (
+            "Unable to authenticate" in error_message or
+            "authentication" in error_message.lower() or
+            "Unable to authenticate your request" in error_message
+        )
+        
+        if is_auth_error:
+            # For auth errors, try fallback but with clear message
+            logger.info(f"Authentication error detected, attempting direct Gemini fallback")
+            try:
+                direct_response = await process_direct_gemini_query(query)
+                direct_response.metadata = direct_response.metadata or {}
+                direct_response.metadata["fallback_reason"] = "authentication_error"
+                direct_response.metadata["original_error"] = error_message
+                direct_response.confidence = 0.6
+                return direct_response
+            except Exception as fallback_error:
+                logger.error(f"Direct Gemini fallback also failed: {str(fallback_error)}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="I apologize, but I encountered an error while searching the curriculum. Please try rephrasing your question. Error: Failed to process RAG query: " + error_message
+                )
+        
         # Check if it's an embedding error (network/connectivity issue)
         is_embedding_error = (
             "embedding" in error_message.lower() or 

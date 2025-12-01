@@ -73,10 +73,20 @@ Answer (ONLY from context, no external knowledge):"""
                     query.query
                 )
             except Exception as e:
+                error_msg = str(e)
                 print(f"Error generating embedding: {e}")
                 import traceback
                 traceback.print_exc()
-                raise RAGPipelineError(f"Failed to generate embedding: {str(e)}")
+                
+                # Check for authentication errors
+                if "Unable to authenticate" in error_msg or "authentication" in error_msg.lower():
+                    raise RAGPipelineError(
+                        f"Google Cloud authentication failed. "
+                        f"On Cloud Run, ensure the service account attached to the service has Vertex AI permissions. "
+                        f"For local development, set GOOGLE_APPLICATION_CREDENTIALS environment variable. "
+                        f"Error: {error_msg}"
+                    )
+                raise RAGPipelineError(f"Failed to generate embedding: {error_msg}")
             
             # Step 2: Build filters if subject is specified
             filters = query.filters.copy() if query.filters else {}

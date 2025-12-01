@@ -131,9 +131,15 @@ class EmbeddingService:
                 if "PERMISSION_DENIED" in error_msg or "IAM_PERMISSION_DENIED" in error_msg:
                     raise EmbeddingGenerationError(
                         f"Permission denied for Vertex AI. The service account needs the 'Vertex AI User' role. "
-                        f"Please grant the role 'roles/aiplatform.user' to the service account: "
-                        f"classroom@buiseness-417505.iam.gserviceaccount.com. "
+                        f"Please grant the role 'roles/aiplatform.user' to the service account. "
                         f"Error details: {error_msg}"
+                    )
+                elif "Unable to authenticate" in error_msg or "authentication" in error_msg.lower():
+                    raise EmbeddingGenerationError(
+                        f"Unable to authenticate your request. "
+                        f"On Cloud Run, ensure the service has a service account attached with Vertex AI permissions. "
+                        f"For local development, set GOOGLE_APPLICATION_CREDENTIALS environment variable or place service-account.json in the project root. "
+                        f"Error: {error_msg}"
                     )
                 raise EmbeddingGenerationError(f"Failed to initialize embedding model: {str(e)}")
     
