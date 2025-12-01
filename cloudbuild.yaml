@@ -1,11 +1,11 @@
 steps:
-  # Build the container image
+  # Build the container image (use BUILD_ID if COMMIT_SHA is not available)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/classroom-backend:$COMMIT_SHA', '-t', 'gcr.io/$PROJECT_ID/classroom-backend:latest', '.']
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/classroom-backend:$BUILD_ID', '-t', 'gcr.io/$PROJECT_ID/classroom-backend:latest', '.']
     
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/classroom-backend:$COMMIT_SHA']
+    args: ['push', 'gcr.io/$PROJECT_ID/classroom-backend:$BUILD_ID']
     
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/classroom-backend:latest']
@@ -18,7 +18,7 @@ steps:
       - 'deploy'
       - 'classroom-backend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/classroom-backend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/classroom-backend:$BUILD_ID'
       - '--region'
       - 'us-central1'
       - '--platform'
@@ -32,15 +32,16 @@ steps:
       - '2'
       - '--timeout'
       - '300'
-      - '--startup-cpu-boost'
       - '--max-instances'
       - '10'
       - '--cpu-boost'
       - '--set-env-vars'
-      - 'PORT=8080'
+      - 'SUPABASE_URL=https://eplwyruyzllqbmnpmdko.supabase.co,GOOGLE_CLOUD_PROJECT=buiseness-417505,GOOGLE_APPLICATION_CREDENTIALS=/secrets/service-account.json,VERTEX_AI_LOCATION=us-central1,VERTEX_AI_EMBEDDING_MODEL=text-embedding-004,PINECONE_ENVIRONMENT=your_pinecone_environment,PINECONE_INDEX_NAME=class12-learning,REDIS_HOST=localhost,REDIS_PORT=6379,REDIS_PASSWORD=,APP_ENV=production,APP_HOST=0.0.0.0,CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8080,RATE_LIMIT_PER_MINUTE=100'
+      - '--update-secrets'
+      - '/secrets/service-account.json=service-account-json:latest,SUPABASE_KEY=supabase-key:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,GEMINI_API_KEY=gemini-api-key:latest,WOLFRAM_APP_ID=wolfram-app-id:latest,YOUTUBE_API_KEY=youtube-api-key:latest,PINECONE_API_KEY=pinecone-api-key:latest'
 
 images:
-  - 'gcr.io/$PROJECT_ID/classroom-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/classroom-backend:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/classroom-backend:latest'
 
 options:

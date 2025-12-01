@@ -118,6 +118,48 @@ gcloud run services update classroom-backend \
     --region=us-central1
 ```
 
+### 4.1. Store Service Account JSON in Secret Manager (Optional but Recommended)
+
+If you need to use a specific service account JSON file (instead of relying on Cloud Run's attached service account), you can store it in Secret Manager:
+
+1. **Upload the service account JSON to Secret Manager:**
+
+```bash
+# Run the provided script
+./upload_service_account_secret.sh
+
+# Or manually:
+gcloud secrets create service-account-json \
+    --data-file=service-account.json \
+    --project=YOUR_PROJECT_ID
+```
+
+2. **Grant access to the secret:**
+
+```bash
+# Run the provided script (automatically detects service account from JSON)
+./grant_secret_access.sh
+
+# Or manually (replace with your service account email):
+gcloud secrets add-iam-policy-binding service-account-json \
+    --member="serviceAccount:classroom@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project=YOUR_PROJECT_ID
+
+# Also grant access to Cloud Run's service account (if different):
+gcloud secrets add-iam-policy-binding service-account-json \
+    --member="serviceAccount:classroom-backend-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project=YOUR_PROJECT_ID
+```
+
+3. **The secret is automatically mounted in Cloud Run** via `cloudbuild.yaml`:
+   - Secret is mounted at `/secrets/service-account.json`
+   - `GOOGLE_APPLICATION_CREDENTIALS` is set to `/secrets/service-account.json`
+   - The application will automatically use this file for authentication
+
+**Note:** If you're using Cloud Run's attached service account with proper IAM roles, you may not need to store the service account JSON separately. The application will automatically use Application Default Credentials (ADC) if the file is not found.
+
 ### 5. Build and Deploy
 
 #### Option A: Using Cloud Build (Recommended)
