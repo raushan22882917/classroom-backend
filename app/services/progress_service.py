@@ -59,115 +59,109 @@ class ProgressService:
         # Parse records safely, handling JSONB fields and type conversions
         progress_records = []
         for record in response.data:
-                try:
-                    # Convert mastery_score to Decimal if needed
-                    if 'mastery_score' in record and record['mastery_score'] is not None:
-                        if isinstance(record['mastery_score'], str):
-                            record['mastery_score'] = Decimal(record['mastery_score'])
-                        elif isinstance(record['mastery_score'], (int, float)):
-                            record['mastery_score'] = Decimal(str(record['mastery_score']))
-                    else:
-                        record['mastery_score'] = Decimal("0.00")
-                    
-                    # Convert subject to Subject enum if it's a string
-                    if 'subject' in record and isinstance(record['subject'], str):
+            try:
+                # Convert mastery_score to Decimal if needed
+                if 'mastery_score' in record and record['mastery_score'] is not None:
+                    if isinstance(record['mastery_score'], str):
+                        record['mastery_score'] = Decimal(record['mastery_score'])
+                    elif isinstance(record['mastery_score'], (int, float)):
+                        record['mastery_score'] = Decimal(str(record['mastery_score']))
+                else:
+                    record['mastery_score'] = Decimal("0.00")
+                
+                # Convert subject to Subject enum if it's a string
+                if 'subject' in record and isinstance(record['subject'], str):
+                    try:
+                        record['subject'] = Subject(record['subject'])
+                    except ValueError:
+                        # Skip invalid subject
+                        continue
+                
+                # Convert datetime strings to datetime objects
+                if 'last_practiced_at' in record and record['last_practiced_at']:
+                    if isinstance(record['last_practiced_at'], str):
                         try:
-                            record['subject'] = Subject(record['subject'])
-                        except ValueError:
-                            # Skip invalid subject
-                            continue
-                    
-                    # Convert datetime strings to datetime objects
-                    if 'last_practiced_at' in record and record['last_practiced_at']:
-                        if isinstance(record['last_practiced_at'], str):
+                            # Try ISO format first
+                            if 'T' in record['last_practiced_at']:
+                                record['last_practiced_at'] = datetime.fromisoformat(record['last_practiced_at'].replace('Z', '+00:00'))
+                            else:
+                                record['last_practiced_at'] = datetime.strptime(record['last_practiced_at'], '%Y-%m-%d %H:%M:%S%z')
+                        except:
                             try:
-                                # Try ISO format first
-                                if 'T' in record['last_practiced_at']:
-                                    record['last_practiced_at'] = datetime.fromisoformat(record['last_practiced_at'].replace('Z', '+00:00'))
+                                record['last_practiced_at'] = datetime.strptime(record['last_practiced_at'], '%Y-%m-%d %H:%M:%S')
+                            except:
+                                record['last_practiced_at'] = None
+                
+                # Convert date strings to date objects
+                if 'last_streak_date' in record and record['last_streak_date']:
+                    if isinstance(record['last_streak_date'], str):
+                        try:
+                            if 'T' in record['last_streak_date']:
+                                record['last_streak_date'] = datetime.fromisoformat(record['last_streak_date'].replace('Z', '+00:00')).date()
+                            else:
+                                record['last_streak_date'] = datetime.strptime(record['last_streak_date'], '%Y-%m-%d').date()
+                        except:
+                            record['last_streak_date'] = None
+                
+                # Convert created_at and updated_at to datetime
+                for date_field in ['created_at', 'updated_at']:
+                    if date_field in record and record[date_field]:
+                        if isinstance(record[date_field], str):
+                            try:
+                                if 'T' in record[date_field]:
+                                    record[date_field] = datetime.fromisoformat(record[date_field].replace('Z', '+00:00'))
                                 else:
-                                    record['last_practiced_at'] = datetime.strptime(record['last_practiced_at'], '%Y-%m-%d %H:%M:%S%z')
+                                    record[date_field] = datetime.strptime(record[date_field], '%Y-%m-%d %H:%M:%S%z')
                             except:
                                 try:
-                                    record['last_practiced_at'] = datetime.strptime(record['last_practiced_at'], '%Y-%m-%d %H:%M:%S')
+                                    record[date_field] = datetime.strptime(record[date_field], '%Y-%m-%d %H:%M:%S')
                                 except:
-                                    record['last_practiced_at'] = None
-                    
-                    # Convert date strings to date objects
-                    if 'last_streak_date' in record and record['last_streak_date']:
-                        if isinstance(record['last_streak_date'], str):
-                            try:
-                                if 'T' in record['last_streak_date']:
-                                    record['last_streak_date'] = datetime.fromisoformat(record['last_streak_date'].replace('Z', '+00:00')).date()
-                                else:
-                                    record['last_streak_date'] = datetime.strptime(record['last_streak_date'], '%Y-%m-%d').date()
-                            except:
-                                record['last_streak_date'] = None
-                    
-                    # Convert created_at and updated_at to datetime
-                    for date_field in ['created_at', 'updated_at']:
-                        if date_field in record and record[date_field]:
-                            if isinstance(record[date_field], str):
-                                try:
-                                    if 'T' in record[date_field]:
-                                        record[date_field] = datetime.fromisoformat(record[date_field].replace('Z', '+00:00'))
-                                    else:
-                                        record[date_field] = datetime.strptime(record[date_field], '%Y-%m-%d %H:%M:%S%z')
-                                except:
-                                    try:
-                                        record[date_field] = datetime.strptime(record[date_field], '%Y-%m-%d %H:%M:%S')
-                                    except:
-                                        pass
-                    
-                    # Ensure achievements is a list
-                    if 'achievements' in record:
-                        if isinstance(record['achievements'], str):
-                            import json
-                            try:
-                                record['achievements'] = json.loads(record['achievements'])
-                            except:
-                                record['achievements'] = []
-                        elif not isinstance(record['achievements'], list):
+                                    pass
+                
+                # Ensure achievements is a list
+                if 'achievements' in record:
+                    if isinstance(record['achievements'], str):
+                        import json
+                        try:
+                            record['achievements'] = json.loads(record['achievements'])
+                        except:
                             record['achievements'] = []
-                    else:
+                    elif not isinstance(record['achievements'], list):
                         record['achievements'] = []
-                    
-                    # Ensure metadata is a dict
-                    if 'metadata' in record:
-                        if isinstance(record['metadata'], str):
-                            import json
-                            try:
-                                record['metadata'] = json.loads(record['metadata'])
-                            except:
-                                record['metadata'] = {}
-                        elif not isinstance(record['metadata'], dict):
+                else:
+                    record['achievements'] = []
+                
+                # Ensure metadata is a dict
+                if 'metadata' in record:
+                    if isinstance(record['metadata'], str):
+                        import json
+                        try:
+                            record['metadata'] = json.loads(record['metadata'])
+                        except:
                             record['metadata'] = {}
-                    else:
+                    elif not isinstance(record['metadata'], dict):
                         record['metadata'] = {}
-                    
-                    # Ensure all required fields have defaults
-                    if 'questions_attempted' not in record:
-                        record['questions_attempted'] = 0
-                    if 'correct_answers' not in record:
-                        record['correct_answers'] = 0
-                    if 'total_time_minutes' not in record:
-                        record['total_time_minutes'] = 0
-                    if 'streak_days' not in record:
-                        record['streak_days'] = 0
-                    
-                    progress_records.append(Progress(**record))
-                except Exception as e:
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(f"Failed to parse progress record: {str(e)}, skipping record. Record: {record}")
-                    continue
-            
-            return progress_records
-        except Exception as e:
-            raise APIException(
-                code="PROGRESS_FETCH_ERROR",
-                message=f"Failed to fetch progress: {str(e)}",
-                status_code=500
-            )
+                else:
+                    record['metadata'] = {}
+                
+                # Ensure all required fields have defaults
+                if 'questions_attempted' not in record:
+                    record['questions_attempted'] = 0
+                if 'correct_answers' not in record:
+                    record['correct_answers'] = 0
+                if 'total_time_minutes' not in record:
+                    record['total_time_minutes'] = 0
+                if 'streak_days' not in record:
+                    record['streak_days'] = 0
+                
+                progress_records.append(Progress(**record))
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to parse progress record: {str(e)}, skipping record. Record: {record}")
+                continue
+        
+        return progress_records
     
     async def get_progress_by_topic(self, user_id: str, topic_id: str) -> Optional[Progress]:
         """
