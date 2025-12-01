@@ -248,6 +248,10 @@ app.add_exception_handler(Exception, generic_exception_handler)
 # Configure CORS - use defaults if settings fail to load
 try:
     cors_origins = settings.cors_origins_list
+    # Ensure Vercel origin is always included
+    vercel_origin = "https://eduverse-dashboard-iota.vercel.app"
+    if vercel_origin not in cors_origins:
+        cors_origins.append(vercel_origin)
 except Exception:
     # Default CORS origins if settings fail (must be explicit when allow_credentials=True)
     cors_origins = [
@@ -257,12 +261,17 @@ except Exception:
         "https://eduverse-dashboard-iota.vercel.app"
     ]
 
+# Log CORS configuration for debugging
+print(f"✓ CORS configured for origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Add a minimal root endpoint that responds immediately (for startup probe)

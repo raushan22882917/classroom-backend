@@ -149,7 +149,7 @@ Please set these in Cloud Run service configuration.
         app_env: str = "production"
         app_host: str = "0.0.0.0"
         app_port: int = 8080
-        cors_origins: str = "*"
+        cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,https://eduverse-dashboard-iota.vercel.app"
         rate_limit_per_minute: int = 100
         wolfram_timeout: int = 60
         wolfram_connect_timeout: int = 10
