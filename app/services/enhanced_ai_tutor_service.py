@@ -54,7 +54,11 @@ class EnhancedAITutorService:
             result = self.supabase.table("ai_tutor_sessions").insert(session_data).execute()
             
             if not result.data:
-                raise APIException("Failed to create session", 500)
+                raise APIException(
+                    code="CREATE_SESSION_ERROR",
+                    message="Failed to create session",
+                    status_code=500
+                )
             
             session = result.data[0]
             
@@ -73,7 +77,11 @@ class EnhancedAITutorService:
             return session
             
         except Exception as e:
-            raise APIException(f"Error creating session: {str(e)}", 500)
+            raise APIException(
+                code="CREATE_SESSION_ERROR",
+                message=f"Error creating session: {str(e)}",
+                status_code=500
+            )
     
     async def get_user_sessions(
         self,
@@ -94,7 +102,11 @@ class EnhancedAITutorService:
             return result.data or []
             
         except Exception as e:
-            raise APIException(f"Error fetching sessions: {str(e)}", 500)
+            raise APIException(
+                code="FETCH_SESSIONS_ERROR",
+                message=f"Error fetching sessions: {str(e)}",
+                status_code=500
+            )
     
     async def get_session_messages(
         self,
@@ -113,7 +125,11 @@ class EnhancedAITutorService:
             return result.data or []
             
         except Exception as e:
-            raise APIException(f"Error fetching messages: {str(e)}", 500)
+            raise APIException(
+                code="FETCH_MESSAGES_ERROR",
+                message=f"Error fetching messages: {str(e)}",
+                status_code=500
+            )
     
     async def send_message(
         self,
@@ -133,7 +149,11 @@ class EnhancedAITutorService:
                 .execute()
             
             if not session_result.data:
-                raise APIException("Session not found", 404)
+                raise APIException(
+                    code="SESSION_NOT_FOUND",
+                    message="Session not found",
+                    status_code=404
+                )
             
             session = session_result.data[0]
             
@@ -199,7 +219,11 @@ class EnhancedAITutorService:
             }
             
         except Exception as e:
-            raise APIException(f"Error sending message: {str(e)}", 500)
+            raise APIException(
+                code="SEND_MESSAGE_ERROR",
+                message=f"Error sending message: {str(e)}",
+                status_code=500
+            )
     
     def _classify_intent(self, content: str) -> str:
         """Classify the intent of the student's message"""
@@ -579,7 +603,11 @@ Format as JSON:
             if json_match:
                 plan_data = json.loads(json_match.group())
             else:
-                raise APIException("Failed to parse lesson plan", 500)
+                raise APIException(
+                    code="PARSE_LESSON_PLAN_ERROR",
+                    message="Failed to parse lesson plan",
+                    status_code=500
+                )
             
             # Save lesson plan to database
             lesson_plan_data = {
@@ -759,7 +787,11 @@ The plan has been saved and you can access it anytime. Would you like me to expl
             if json_match:
                 plan_data = json.loads(json_match.group())
             else:
-                raise APIException("Failed to parse lesson plan response", 500)
+                raise APIException(
+                    code="PARSE_LESSON_PLAN_RESPONSE_ERROR",
+                    message="Failed to parse lesson plan response",
+                    status_code=500
+                )
             
             # Save to database
             lesson_plan_data = {
@@ -784,7 +816,11 @@ The plan has been saved and you can access it anytime. Would you like me to expl
             }
             
         except Exception as e:
-            raise APIException(f"Error generating lesson plan: {str(e)}", 500)
+            raise APIException(
+                code="GENERATE_LESSON_PLAN_ERROR",
+                message=f"Error generating lesson plan: {str(e)}",
+                status_code=500
+            )
     
     async def get_lesson_plans(
         self,
@@ -809,7 +845,11 @@ The plan has been saved and you can access it anytime. Would you like me to expl
             return result.data or []
             
         except Exception as e:
-            raise APIException(f"Error fetching lesson plans: {str(e)}", 500)
+            raise APIException(
+                code="FETCH_LESSON_PLANS_ERROR",
+                message=f"Error fetching lesson plans: {str(e)}",
+                status_code=500
+            )
     
     async def get_teacher_student_sessions(
         self,
@@ -858,5 +898,9 @@ The plan has been saved and you can access it anytime. Would you like me to expl
             return result.data or []
             
         except Exception as e:
-            raise APIException(f"Error fetching student sessions: {str(e)}", 500)
+            raise APIException(
+                code="FETCH_STUDENT_SESSIONS_ERROR",
+                message=f"Error fetching student sessions: {str(e)}",
+                status_code=500
+            )
 

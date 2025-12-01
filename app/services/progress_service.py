@@ -44,10 +44,21 @@ class ProgressService:
             
             if not response.data:
                 return []
-            
-            # Parse records safely, handling JSONB fields and type conversions
-            progress_records = []
-            for record in response.data:
+        except Exception as e:
+            error_msg = str(e)
+            # Check for Supabase authentication errors
+            if "Invalid API key" in error_msg or "401" in error_msg or "JSON could not be generated" in error_msg:
+                raise APIException(
+                    code="SUPABASE_AUTH_ERROR",
+                    message="Database authentication failed. Please check Supabase service key configuration.",
+                    status_code=503
+                )
+            # Re-raise other errors
+            raise
+        
+        # Parse records safely, handling JSONB fields and type conversions
+        progress_records = []
+        for record in response.data:
                 try:
                     # Convert mastery_score to Decimal if needed
                     if 'mastery_score' in record and record['mastery_score'] is not None:

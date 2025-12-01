@@ -49,7 +49,20 @@ async def get_user_progress(
     Returns:
         List of progress records
     """
-    return await service.get_user_progress(user_id, subject)
+    try:
+        return await service.get_user_progress(user_id, subject)
+    except Exception as e:
+        error_msg = str(e)
+        # Check if it's a Supabase authentication error
+        if "Invalid API key" in error_msg or "401" in error_msg or "JSON could not be generated" in error_msg:
+            raise HTTPException(
+                status_code=503,
+                detail="Database authentication error. Please check Supabase configuration."
+            )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch progress: {error_msg}"
+        )
 
 
 @router.get("/progress/{user_id}/summary")
