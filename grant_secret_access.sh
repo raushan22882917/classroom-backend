@@ -53,3 +53,4 @@ echo "      --role=\"roles/secretmanager.secretAccessor\" \\"
 echo "      --project=$PROJECT_ID"
 echo ""
 
+

@@ -28,7 +28,9 @@ These environment variables **must** be set in your Cloud Run service configurat
 - **PORT** - Port to run on (Cloud Run sets this automatically, defaults to 8080)
 - **GOOGLE_APPLICATION_CREDENTIALS** - Path to service account JSON (only needed for local dev)
 - **VERTEX_AI_LOCATION** - Default: `us-central1`
-- **CORS_ORIGINS** - Comma-separated list of allowed origins
+- **CORS_ORIGINS** - Comma-separated list of allowed origins (default includes localhost and Vercel production URL)
+  - Example: `http://localhost:5173,https://eduverse-dashboard-iota.vercel.app`
+  - Note: When using credentials, you must specify exact origins (cannot use "*")
 
 ## How to Set in Cloud Run
 

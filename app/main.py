@@ -249,8 +249,13 @@ app.add_exception_handler(Exception, generic_exception_handler)
 try:
     cors_origins = settings.cors_origins_list
 except Exception:
-    # Default CORS origins if settings fail
-    cors_origins = ["*"]
+    # Default CORS origins if settings fail (must be explicit when allow_credentials=True)
+    cors_origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "https://eduverse-dashboard-iota.vercel.app"
+    ]
 
 app.add_middleware(
     CORSMiddleware,

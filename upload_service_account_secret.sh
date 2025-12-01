@@ -58,3 +58,4 @@ echo ""
 echo "2. Update your Cloud Run service to mount the secret (see cloudbuild.yaml)"
 echo ""
 
+

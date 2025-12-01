@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     app_env: str = "production"  # Default to production for Cloud Run
     app_host: str = "0.0.0.0"
     app_port: int = 8080  # Cloud Run default port
-    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,https://eduverse-dashboard-iota.vercel.app"
     
     # Rate Limiting
     rate_limit_per_minute: int = 100
