@@ -297,13 +297,16 @@ class EnhancedAITutorService:
             student_name = profile_result.data[0].get("full_name", "there") if profile_result.data else "there"
             
             # Build friendly greeting prompt
+            # Build context part separately to avoid backslash in f-string expression
+            context_part = ""
+            if context:
+                context_part = f"Previous conversation:\n{context}\n"
+            
             prompt = f"""You are a friendly, encouraging AI tutor helping a Class 12 student named {student_name} with {subject.value}.
 
 Student said: {content}
 
-{f"Previous conversation:\n{context}" if context else ""}
-
-Respond in a warm, friendly, and encouraging way. Be conversational and welcoming. Keep it brief (1-2 sentences) and invite them to ask questions or get help with their studies.
+{context_part}Respond in a warm, friendly, and encouraging way. Be conversational and welcoming. Keep it brief (1-2 sentences) and invite them to ask questions or get help with their studies.
 
 Examples of good responses:
 - "Hello! I'm excited to help you learn {subject.value}. What would you like to work on today?"
