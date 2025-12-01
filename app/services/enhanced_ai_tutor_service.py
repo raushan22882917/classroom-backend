@@ -102,6 +102,15 @@ class EnhancedAITutorService:
             return result.data or []
             
         except Exception as e:
+            error_msg = str(e)
+            # Check for Supabase authentication errors
+            if "Invalid API key" in error_msg or "401" in error_msg or "JSON could not be generated" in error_msg:
+                raise APIException(
+                    code="SUPABASE_AUTH_ERROR",
+                    message="Database authentication failed. Please check Supabase service key configuration.",
+                    status_code=503
+                )
+            # Re-raise other errors
             raise APIException(
                 code="FETCH_SESSIONS_ERROR",
                 message=f"Error fetching sessions: {str(e)}",

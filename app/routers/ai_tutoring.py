@@ -239,6 +239,14 @@ async def get_sessions(
             "count": len(sessions)
         }
     except APIException as e:
+        # If it's an authentication error, return empty list instead of error
+        if e.code == "SUPABASE_AUTH_ERROR":
+            return {
+                "success": True,
+                "sessions": [],
+                "count": 0,
+                "message": "Database configuration issue. Sessions will be available once configured."
+            }
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:
         raise HTTPException(
