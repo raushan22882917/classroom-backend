@@ -255,10 +255,18 @@ app.add_exception_handler(Exception, generic_exception_handler)
 # Configure CORS - use defaults if settings fail to load
 try:
     cors_origins = settings.cors_origins_list
-    # Ensure Vercel origin is always included
-    vercel_origin = "https://eduverse-dashboard-iota.vercel.app"
-    if vercel_origin not in cors_origins:
-        cors_origins.append(vercel_origin)
+    # Ensure critical origins are always included
+    required_origins = [
+        "https://eduverse-dashboard-iota.vercel.app",
+        "http://localhost:8080",  # Magic Learn frontend
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000"   # React dev server
+    ]
+    
+    for origin in required_origins:
+        if origin not in cors_origins:
+            cors_origins.append(origin)
+            
 except Exception:
     # Default CORS origins if settings fail (must be explicit when allow_credentials=True)
     cors_origins = [
@@ -271,6 +279,20 @@ except Exception:
 # Log CORS configuration for debugging
 print(f"✓ CORS configured for origins: {cors_origins}")
 
+# Always allow localhost origins for development and testing
+localhost_origins = [
+    "http://localhost:8080",
+    "http://localhost:8081", 
+    "http://localhost:8082",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:8081",
+    "http://127.0.0.1:8082"
+]
+
+cors_origins.extend(localhost_origins)
+# Remove duplicates
+cors_origins = list(set(cors_origins))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -281,11 +303,69 @@ app.add_middleware(
     max_age=3600,  # Cache preflight requests for 1 hour
 )
 
+# Add additional CORS handling for Magic Learn endpoints
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    """Add CORS headers for all requests, especially for Magic Learn endpoints"""
+    
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    
+    # Log CORS requests for debugging
+    if origin:
+        print(f"🌐 CORS request from origin: {origin}")
+        print(f"🌐 Request method: {request.method}")
+        print(f"🌐 Request path: {request.url.path}")
+    
+    response = await call_next(request)
+    
+    # Allow localhost origins for development and configured origins
+    if origin and (
+        origin.startswith("http://localhost:") or 
+        origin.startswith("https://localhost:") or
+        origin in cors_origins
+    ):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        print(f"✅ CORS headers added for origin: {origin}")
+    elif origin:
+        print(f"❌ CORS blocked for origin: {origin}")
+    
+    return response
+
 # Add a minimal root endpoint that responds immediately (for startup probe)
 @app.get("/")
 async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
+
+# Handle preflight OPTIONS requests for Magic Learn endpoints
+@app.options("/api/magic-learn/{path:path}")
+async def magic_learn_options(path: str, request):
+    """Handle preflight OPTIONS requests for Magic Learn endpoints"""
+    from fastapi import Response
+    
+    origin = request.headers.get("origin", "")
+    
+    # Create response with CORS headers
+    response = Response()
+    
+    # Allow localhost origins and configured origins
+    if origin and (
+        origin.startswith("http://localhost:") or 
+        origin.startswith("https://localhost:") or
+        origin in cors_origins
+    ):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
+        response.headers["Access-Control-Max-Age"] = "3600"
+    
+    return response
 
 # Add alias routes for backward compatibility (proxy /ai-tutoring/* to /api/ai-tutoring/*)
 # This allows frontend to call /ai-tutoring/sessions instead of /api/ai-tutoring/sessions

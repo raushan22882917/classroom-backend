@@ -1,15 +1,19 @@
-"""Magic Learn service for AI-powered learning tools"""
+"""Magic Learn service for AI-powered learning tools with Gemini API integration"""
 
 import base64
 import io
 import time
 import uuid
+import os
+import cv2
 from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image
 import numpy as np
 from datetime import datetime
 import asyncio
 import json
+import google.generativeai as genai
+from app.config import settings
 
 from app.models.magic_learn import (
     ImageAnalysisRequest, ImageAnalysisResponse, AnalysisType,
@@ -18,6 +22,14 @@ from app.models.magic_learn import (
     PlotCrafterRequest, PlotCrafterResponse, GeneratedStory, StoryElement,
     MagicLearnSession, MagicLearnAnalytics
 )
+
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    print("✅ Gemini API configured for Magic Learn")
+else:
+    print("⚠️ Warning: GEMINI_API_KEY not found in environment variables")
 
 
 class ImageReaderService:
@@ -95,25 +107,161 @@ class ImageReaderService:
     
     async def _perform_ai_analysis(self, image: Image.Image, analysis_type: AnalysisType, 
                                  custom_instructions: Optional[str]) -> Dict[str, Any]:
-        """Perform AI analysis on the image"""
+        """Perform AI analysis on the image using Gemini API"""
         
-        # Simulate AI analysis - in production, this would call actual AI vision models
-        # like Google Vision API, OpenAI GPT-4V, or custom models
+        if not GEMINI_API_KEY:
+            # Fallback to mock analysis if no API key
+            await asyncio.sleep(0.5)
+            return await self._fallback_analysis(analysis_type, custom_instructions)
+        
+        try:
+            # Convert PIL image to bytes for Gemini
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            
+            # Create Gemini model
+            model = genai.GenerativeModel('gemini-2.5-flash-lite')
+            
+            # Create prompt based on analysis type
+            prompt = self._create_analysis_prompt(analysis_type, custom_instructions)
+            
+            # Prepare image for Gemini
+            image_parts = [{
+                "mime_type": "image/png",
+                "data": img_byte_arr
+            }]
+            
+            # Generate content with Gemini
+            response = model.generate_content([prompt, image_parts[0]])
+            
+            # Process Gemini response
+            analysis_text = response.text
+            
+            # Extract detected elements and confidence from response
+            detected_elements = self._extract_elements_from_response(analysis_text, analysis_type)
+            confidence = self._calculate_confidence_from_response(analysis_text)
+            
+            return {
+                "analysis": analysis_text,
+                "detected_elements": detected_elements,
+                "confidence": confidence
+            }
+            
+        except Exception as e:
+            print(f"Gemini API error: {str(e)}")
+            # Fallback to mock analysis on error
+            return await self._fallback_analysis(analysis_type, custom_instructions)
+    
+    def _create_analysis_prompt(self, analysis_type: AnalysisType, custom_instructions: Optional[str]) -> str:
+        """Create analysis prompt based on type and custom instructions"""
+        
+        base_prompts = {
+            AnalysisType.MATHEMATICAL: """Analyze this image for mathematical content. Provide:
+1. Any equations, formulas, or mathematical expressions you see
+2. Step-by-step solutions if equations are present
+3. Explanations of mathematical concepts shown
+4. If you see geometric shapes, calculate relevant properties (area, perimeter, etc.)
+Format your response in clear markdown with proper mathematical notation using LaTeX.""",
+            
+            AnalysisType.SCIENTIFIC: """Analyze this image for scientific content. Provide:
+1. Identification of scientific diagrams, charts, or illustrations
+2. Explanation of scientific concepts shown
+3. Description of any processes or systems depicted
+4. Educational insights about the scientific principles
+Format your response in clear markdown with proper headings.""",
+            
+            AnalysisType.TEXT_EXTRACTION: """Extract and analyze all text content from this image. Provide:
+1. All readable text in the image
+2. Analysis of the text content and its meaning
+3. Context and educational value of the text
+4. Any formulas or equations within the text
+Format your response clearly with the extracted text and analysis.""",
+            
+            AnalysisType.OBJECT_IDENTIFICATION: """Identify and analyze all objects and shapes in this image. Provide:
+1. List of all objects, shapes, and visual elements
+2. Properties of geometric shapes (if any)
+3. Spatial relationships between objects
+4. Educational applications of the identified elements
+Format your response with clear categorization of identified elements.""",
+            
+            AnalysisType.GENERAL: """Provide a comprehensive analysis of this educational image. Include:
+1. Description of all visual elements
+2. Any mathematical, scientific, or educational content
+3. Learning opportunities and concepts present
+4. Step-by-step explanations where applicable
+Format your response in clear markdown with appropriate headings."""
+        }
+        
+        prompt = base_prompts.get(analysis_type, base_prompts[AnalysisType.GENERAL])
+        
+        if custom_instructions:
+            prompt += f"\n\nAdditional instructions: {custom_instructions}"
+        
+        return prompt
+    
+    def _extract_elements_from_response(self, response_text: str, analysis_type: AnalysisType) -> List[str]:
+        """Extract detected elements from Gemini response"""
+        
+        elements = []
+        response_lower = response_text.lower()
+        
+        # Mathematical elements
+        if 'equation' in response_lower or 'formula' in response_lower:
+            elements.append('mathematical_equations')
+        if 'triangle' in response_lower or 'circle' in response_lower or 'rectangle' in response_lower:
+            elements.append('geometric_shapes')
+        if any(term in response_lower for term in ['algebra', 'calculus', 'geometry']):
+            elements.append('mathematical_concepts')
+        
+        # Scientific elements
+        if any(term in response_lower for term in ['cell', 'molecule', 'atom', 'dna']):
+            elements.append('biological_content')
+        if any(term in response_lower for term in ['force', 'energy', 'velocity', 'acceleration']):
+            elements.append('physics_content')
+        if any(term in response_lower for term in ['reaction', 'compound', 'element']):
+            elements.append('chemistry_content')
+        
+        # General elements
+        if 'text' in response_lower:
+            elements.append('text_content')
+        if 'diagram' in response_lower or 'chart' in response_lower:
+            elements.append('diagrams')
+        if 'drawing' in response_lower or 'sketch' in response_lower:
+            elements.append('hand_drawn_content')
+        
+        return elements if elements else ['general_content']
+    
+    def _calculate_confidence_from_response(self, response_text: str) -> float:
+        """Calculate confidence score based on response quality"""
+        
+        # Simple heuristic based on response length and content
+        if len(response_text) < 50:
+            return 0.3
+        elif len(response_text) < 200:
+            return 0.6
+        elif len(response_text) < 500:
+            return 0.8
+        else:
+            return 0.9
+    
+    async def _fallback_analysis(self, analysis_type: AnalysisType, custom_instructions: Optional[str]) -> Dict[str, Any]:
+        """Fallback analysis when Gemini API is not available"""
         
         await asyncio.sleep(0.5)  # Simulate processing time
         
         if analysis_type == AnalysisType.MATHEMATICAL:
-            return await self._analyze_mathematical_content(image, custom_instructions)
+            return await self._analyze_mathematical_content(None, custom_instructions)
         elif analysis_type == AnalysisType.SCIENTIFIC:
-            return await self._analyze_scientific_content(image, custom_instructions)
+            return await self._analyze_scientific_content(None, custom_instructions)
         elif analysis_type == AnalysisType.TEXT_EXTRACTION:
-            return await self._extract_text_content(image, custom_instructions)
+            return await self._extract_text_content(None, custom_instructions)
         elif analysis_type == AnalysisType.OBJECT_IDENTIFICATION:
-            return await self._identify_objects(image, custom_instructions)
+            return await self._identify_objects(None, custom_instructions)
         else:
-            return await self._general_analysis(image, custom_instructions)
+            return await self._general_analysis(None, custom_instructions)
     
-    async def _analyze_mathematical_content(self, image: Image.Image, 
+    async def _analyze_mathematical_content(self, image: Optional[Image.Image], 
                                           custom_instructions: Optional[str]) -> Dict[str, Any]:
         """Analyze mathematical equations and formulas"""
         
@@ -163,7 +311,7 @@ Let's solve: $2x^2 + 5x - 3 = 0$
             "confidence": 0.92
         }
     
-    async def _analyze_scientific_content(self, image: Image.Image, 
+    async def _analyze_scientific_content(self, image: Optional[Image.Image], 
                                         custom_instructions: Optional[str]) -> Dict[str, Any]:
         """Analyze scientific diagrams and charts"""
         
@@ -211,7 +359,7 @@ Your diagram appears to show a **cellular structure** with several key component
             "confidence": 0.88
         }
     
-    async def _extract_text_content(self, image: Image.Image, 
+    async def _extract_text_content(self, image: Optional[Image.Image], 
                                   custom_instructions: Optional[str]) -> Dict[str, Any]:
         """Extract and analyze text content"""
         
@@ -252,7 +400,7 @@ Try calculating wave velocity with different frequency and wavelength values!
             "confidence": 0.85
         }
     
-    async def _identify_objects(self, image: Image.Image, 
+    async def _identify_objects(self, image: Optional[Image.Image], 
                               custom_instructions: Optional[str]) -> Dict[str, Any]:
         """Identify objects and shapes in the image"""
         
@@ -290,7 +438,7 @@ These shapes can represent various concepts:
             "confidence": 0.90
         }
     
-    async def _general_analysis(self, image: Image.Image, 
+    async def _general_analysis(self, image: Optional[Image.Image], 
                               custom_instructions: Optional[str]) -> Dict[str, Any]:
         """Perform general analysis of the image"""
         
@@ -675,10 +823,164 @@ class PlotCrafterService:
             return 'educational'
     
     async def _generate_story_content(self, request: PlotCrafterRequest, story_type: str) -> GeneratedStory:
-        """Generate the main story content"""
+        """Generate the main story content using Gemini API"""
         
-        generator = self.story_templates.get(story_type, self._create_educational_story)
-        return await generator(request)
+        if not GEMINI_API_KEY:
+            # Fallback to template-based generation
+            generator = self.story_templates.get(story_type, self._create_educational_story)
+            return await generator(request)
+        
+        try:
+            # Use Gemini to generate educational story
+            model = genai.GenerativeModel('gemini-2.5-flash-lite')
+            
+            prompt = f"""Create an educational story based on the following requirements:
+
+Story Prompt: {request.story_prompt}
+Educational Topic: {request.educational_topic or 'General Learning'}
+Target Age Group: {request.target_age_group}
+Story Length: {request.story_length}
+
+Requirements:
+1. Create an engaging story that incorporates the educational topic naturally
+2. Include 2-3 main characters with clear roles
+3. Set the story in 1-2 interesting locations
+4. Weave in educational concepts throughout the narrative
+5. Include clear learning objectives
+6. Make it age-appropriate and engaging
+
+Format your response as a complete story in markdown with:
+- A compelling title
+- Chapter structure if medium/long length
+- Educational concepts highlighted
+- Character development
+- Clear learning outcomes
+
+The story should be educational but entertaining, helping students learn through narrative."""
+
+            response = model.generate_content([prompt])
+            story_content = response.text
+            
+            # Extract story components from generated content
+            title = self._extract_title_from_content(story_content)
+            characters = self._extract_characters_from_content(story_content)
+            settings = self._extract_settings_from_content(story_content)
+            educational_elements = self._extract_educational_elements(story_content)
+            learning_objectives = self._extract_learning_objectives(story_content)
+            
+            return GeneratedStory(
+                title=title,
+                content=story_content,
+                characters=characters,
+                settings=settings,
+                educational_elements=educational_elements,
+                learning_objectives=learning_objectives
+            )
+            
+        except Exception as e:
+            print(f"Gemini story generation error: {str(e)}")
+            # Fallback to template-based generation
+            generator = self.story_templates.get(story_type, self._create_educational_story)
+            return await generator(request)
+    
+    def _extract_title_from_content(self, content: str) -> str:
+        """Extract title from generated story content"""
+        lines = content.split('\n')
+        for line in lines:
+            if line.startswith('# '):
+                return line[2:].strip()
+        return "Generated Educational Story"
+    
+    def _extract_characters_from_content(self, content: str) -> List[StoryElement]:
+        """Extract characters from generated story content"""
+        # Simple extraction - in production, use more sophisticated NLP
+        characters = []
+        content_lower = content.lower()
+        
+        # Look for common character names and roles
+        if 'alex' in content_lower:
+            characters.append(StoryElement(
+                element_type="protagonist",
+                name="Alex",
+                description="Main character in the story",
+                properties={"role": "student"}
+            ))
+        
+        if 'teacher' in content_lower or 'professor' in content_lower:
+            characters.append(StoryElement(
+                element_type="mentor",
+                name="Teacher",
+                description="Educational guide in the story",
+                properties={"role": "educator"}
+            ))
+        
+        return characters
+    
+    def _extract_settings_from_content(self, content: str) -> List[StoryElement]:
+        """Extract settings from generated story content"""
+        settings = []
+        content_lower = content.lower()
+        
+        # Look for common settings
+        if 'school' in content_lower or 'classroom' in content_lower:
+            settings.append(StoryElement(
+                element_type="location",
+                name="School",
+                description="Educational setting",
+                properties={"type": "educational"}
+            ))
+        
+        if 'laboratory' in content_lower or 'lab' in content_lower:
+            settings.append(StoryElement(
+                element_type="location",
+                name="Laboratory",
+                description="Scientific research setting",
+                properties={"type": "scientific"}
+            ))
+        
+        return settings
+    
+    def _extract_educational_elements(self, content: str) -> List[str]:
+        """Extract educational concepts from story content"""
+        # Use the existing StoryProcessor utility
+        from app.utils.image_processing import StoryProcessor
+        return StoryProcessor.extract_educational_concepts(content)
+    
+    def _extract_learning_objectives(self, content: str) -> List[str]:
+        """Extract learning objectives from story content"""
+        objectives = []
+        
+        # Look for explicit learning objectives in the content
+        lines = content.split('\n')
+        in_objectives_section = False
+        
+        for line in lines:
+            line = line.strip()
+            if 'learning objective' in line.lower() or 'objectives' in line.lower():
+                in_objectives_section = True
+                continue
+            
+            if in_objectives_section:
+                if line.startswith('- ') or line.startswith('* '):
+                    objectives.append(line[2:].strip())
+                elif line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                    objectives.append(line[3:].strip())
+                elif line == '' or line.startswith('#'):
+                    in_objectives_section = False
+        
+        # If no explicit objectives found, generate some based on content
+        if not objectives:
+            content_lower = content.lower()
+            if 'mathematics' in content_lower or 'math' in content_lower:
+                objectives.append("Understand mathematical concepts through storytelling")
+            if 'science' in content_lower:
+                objectives.append("Learn scientific principles through narrative")
+            if 'history' in content_lower:
+                objectives.append("Explore historical events and their significance")
+            
+            objectives.append("Develop critical thinking through story analysis")
+        
+        return objectives[:5]  # Limit to 5 objectives
     
     async def _create_educational_story(self, request: PlotCrafterRequest) -> GeneratedStory:
         """Create an educational story"""

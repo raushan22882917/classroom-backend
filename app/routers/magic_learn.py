@@ -15,10 +15,10 @@ from app.models.magic_learn import (
 )
 from app.services.magic_learn_service import (
     image_reader_service,
-    draw_in_air_service,
     plot_crafter_service,
     analytics_service
 )
+from app.services.draw_in_air_service import draw_in_air_service
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +39,30 @@ async def health_check():
         },
         "timestamp": time.time()
     }
+
+
+@router.get("/magic-learn/cors-test")
+async def cors_test():
+    """Simple CORS test endpoint"""
+    return {
+        "message": "CORS test successful",
+        "timestamp": time.time(),
+        "status": "ok"
+    }
+
+
+@router.options("/magic-learn/{path:path}")
+async def magic_learn_options_handler(path: str):
+    """Handle OPTIONS requests for Magic Learn endpoints"""
+    from fastapi import Response
+    
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
+    response.headers["Access-Control-Max-Age"] = "3600"
+    
+    return response
 
 
 @router.post("/magic-learn/image-reader/analyze", response_model=ImageAnalysisResponse)
@@ -129,23 +153,132 @@ async def upload_and_analyze_image(
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
+# DrawInAir endpoints with MediaPipe integration
+
+@router.post("/magic-learn/draw-in-air/start")
+async def start_draw_in_air():
+    """Start DrawInAir session with MediaPipe hand tracking"""
+    try:
+        result = await draw_in_air_service.start_session()
+        
+        if result['success']:
+            # Create session for tracking
+            session_id = await analytics_service.create_session(
+                user_id=None,
+                tool_used="draw_in_air"
+            )
+            result['session_id'] = session_id
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error starting DrawInAir: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/draw-in-air/process-frame")
+async def process_draw_in_air_frame(request: dict):
+    """Process video frame with hand tracking and gesture recognition"""
+    try:
+        frame_data = request.get('frame')
+        if not frame_data:
+            return {"success": False, "error": "No frame data provided"}
+        
+        result = await draw_in_air_service.process_frame(frame_data)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error processing DrawInAir frame: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/draw-in-air/analyze")
+async def analyze_draw_in_air_drawing(request: dict):
+    """Analyze drawn content with Gemini AI"""
+    try:
+        image_data = request.get('image')
+        if not image_data:
+            return {"success": False, "error": "No image data provided"}
+        
+        # Create session for tracking
+        session_id = await analytics_service.create_session(
+            user_id=request.get('user_id'),
+            tool_used="draw_in_air_analysis"
+        )
+        
+        result = await draw_in_air_service.analyze_drawing(image_data)
+        
+        # Update session with results
+        await analytics_service.update_session(session_id, {
+            "analysis_success": result['success'],
+            "has_content": bool(image_data)
+        })
+        
+        logger.info(f"DrawInAir analysis completed - Session: {session_id}, Success: {result['success']}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error analyzing DrawInAir drawing: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/draw-in-air/clear")
+async def clear_draw_in_air_canvas():
+    """Clear DrawInAir canvas"""
+    try:
+        result = await draw_in_air_service.clear_canvas()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error clearing DrawInAir canvas: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/draw-in-air/stop")
+async def stop_draw_in_air():
+    """Stop DrawInAir session and cleanup resources"""
+    try:
+        result = await draw_in_air_service.stop_session()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error stopping DrawInAir: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/magic-learn/draw-in-air/gesture")
+async def get_current_gesture():
+    """Get current hand gesture"""
+    try:
+        return {
+            "success": True,
+            "gesture": draw_in_air_service.current_gesture
+        }
+    except Exception as e:
+        logger.error(f"Error getting current gesture: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# Legacy gesture recognition endpoint (for backward compatibility)
 @router.post("/magic-learn/draw-in-air/recognize", response_model=GestureRecognitionResponse)
 async def recognize_gestures(request: GestureRecognitionRequest):
     """
-    Recognize shapes and patterns from hand gesture points
+    Legacy endpoint for gesture recognition from coordinate points
     
-    Processes gesture coordinates to identify geometric shapes, mathematical
-    concepts, and provide educational insights.
+    Note: The new DrawInAir service uses real-time MediaPipe processing.
+    This endpoint is maintained for backward compatibility.
     """
     try:
         # Create session for tracking
         session_id = await analytics_service.create_session(
             user_id=request.user_id,
-            tool_used="draw_in_air"
+            tool_used="draw_in_air_legacy"
         )
         
-        # Perform gesture recognition
-        result = await draw_in_air_service.recognize_gestures(request)
+        # Use the original gesture recognition service for coordinate-based analysis
+        from app.services.magic_learn_service import draw_in_air_service as legacy_service
+        result = await legacy_service.recognize_gestures(request)
         
         # Update session with results
         await analytics_service.update_session(session_id, {
@@ -156,12 +289,12 @@ async def recognize_gestures(request: GestureRecognitionRequest):
             "shapes_detected": [shape.shape_type for shape in result.recognized_shapes]
         })
         
-        logger.info(f"Gesture recognition completed - Session: {session_id}, Success: {result.success}")
+        logger.info(f"Legacy gesture recognition completed - Session: {session_id}, Success: {result.success}")
         
         return result
         
     except Exception as e:
-        logger.error(f"Error in gesture recognition: {str(e)}")
+        logger.error(f"Error in legacy gesture recognition: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         
         return GestureRecognitionResponse(
@@ -176,7 +309,7 @@ async def recognize_gestures(request: GestureRecognitionRequest):
 @router.post("/magic-learn/plot-crafter/generate", response_model=PlotCrafterResponse)
 async def generate_story(request: PlotCrafterRequest):
     """
-    Generate educational stories with AI-powered visualizations
+    Generate educational stories with AI-powered visualizations using Gemini API
     
     Creates interactive learning experiences through story-based content
     with educational objectives and visual elements.
@@ -188,7 +321,7 @@ async def generate_story(request: PlotCrafterRequest):
             tool_used="plot_crafter"
         )
         
-        # Generate story
+        # Generate story with Gemini API
         result = await plot_crafter_service.generate_story(request)
         
         # Update session with results
@@ -213,11 +346,83 @@ async def generate_story(request: PlotCrafterRequest):
         
         return PlotCrafterResponse(
             success=False,
-            story=None,
+            story=GeneratedStory(
+                title="Error",
+                content="Story generation failed",
+                characters=[],
+                settings=[],
+                educational_elements=[],
+                learning_objectives=[]
+            ),
             visualization_prompts=[],
             interactive_elements=[],
             error=f"Story generation failed: {str(e)}"
         )
+
+
+@router.post("/magic-learn/plot-crafter/generate-simple")
+async def generate_simple_explanation(request: dict):
+    """
+    Generate concise real-life example explanation using Gemini API
+    
+    This endpoint matches the Flask app's approach of providing short,
+    interactive real-life examples for educational concepts.
+    """
+    try:
+        theme = request.get('theme')
+        if not theme:
+            return {"success": False, "error": "No theme provided"}
+        
+        # Create session for tracking
+        session_id = await analytics_service.create_session(
+            user_id=request.get('user_id'),
+            tool_used="plot_crafter_simple"
+        )
+        
+        # Use Gemini API for simple explanation
+        import google.generativeai as genai
+        import os
+        
+        GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+        if not GEMINI_API_KEY:
+            return {"success": False, "error": "Gemini API key not configured"}
+        
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
+        
+        prompt = f"""Explain the concept "{theme}" using a SINGLE real-life example in simple, interactive language.
+
+CRITICAL REQUIREMENTS:
+- Use ONLY ONE PARAGRAPH (maximum 4-5 sentences)
+- Explain with a relatable, everyday real-life scenario
+- Use simple, conversational language that anyone can understand
+- Make it interactive and engaging
+- DO NOT write a long story - just one clear, concise example
+- Focus on helping the user understand the concept quickly
+
+Example format: "Imagine you're [everyday scenario]. This is exactly how [concept] works because [simple explanation]."
+
+Topic: {theme}
+
+Provide your ONE PARAGRAPH real-life example explanation:"""
+
+        response = model.generate_content([prompt])
+        
+        # Update session with results
+        await analytics_service.update_session(session_id, {
+            "theme": theme,
+            "success": True,
+            "response_length": len(response.text)
+        })
+        
+        return {
+            "success": True,
+            "result": response.text
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in simple explanation generation: {str(e)}")
+        return {"success": False, "error": str(e)}
 
 
 @router.get("/magic-learn/analytics", response_model=MagicLearnAnalytics)
@@ -293,19 +498,28 @@ async def get_examples():
         ],
         "draw_in_air_examples": [
             {
+                "title": "Hand Gesture Drawing",
+                "description": "Use MediaPipe hand tracking to draw in the air with natural gestures",
+                "gestures": {
+                    "Drawing": "Thumb + Index finger extended",
+                    "Moving": "Thumb + Index + Middle finger extended", 
+                    "Erasing": "Thumb + Middle finger extended",
+                    "Clearing": "Thumb + Pinky finger extended",
+                    "Analyzing": "Index + Middle finger extended (no thumb)"
+                },
+                "learning_outcome": "Interactive gesture-based learning with real-time feedback"
+            },
+            {
+                "title": "Mathematical Equations",
+                "description": "Draw equations in the air and get AI analysis with step-by-step solutions",
+                "example": "Draw 'x² + 5x + 6 = 0' and get factoring explanation",
+                "learning_outcome": "Visual mathematics with immediate AI feedback"
+            },
+            {
                 "title": "Geometric Shapes",
-                "description": "Draw circles, triangles, rectangles in the air to learn about their properties",
-                "learning_outcome": "Understanding geometric properties and calculations"
-            },
-            {
-                "title": "Mathematical Functions",
-                "description": "Trace function curves to explore mathematical relationships",
-                "learning_outcome": "Visualizing mathematical concepts through gesture"
-            },
-            {
-                "title": "Scientific Processes",
-                "description": "Draw molecular structures or process flows",
-                "learning_outcome": "Interactive learning of scientific concepts"
+                "description": "Draw shapes and get instant property calculations",
+                "example": "Draw a triangle and learn about area, perimeter, and angles",
+                "learning_outcome": "Interactive geometry with real-time analysis"
             }
         ],
         "plot_crafter_examples": [
