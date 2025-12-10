@@ -217,6 +217,13 @@ except Exception as e:
     _router_errors.append(f"notification: {str(e)}")
     print(f"⚠ Warning: Failed to import notification router: {e}")
 
+try:
+    from app.routers import magic_learn
+    _router_imports['magic_learn'] = magic_learn
+except Exception as e:
+    _router_errors.append(f"magic_learn: {str(e)}")
+    print(f"⚠ Warning: Failed to import magic_learn router: {e}")
+
 from app.utils.exceptions import (
     APIException,
     api_exception_handler,
@@ -478,6 +485,8 @@ if 'messages' in _router_imports:
     app.include_router(_router_imports['messages'].router, prefix="/api", tags=["messages"])
 if 'notification' in _router_imports:
     app.include_router(_router_imports['notification'].router, prefix="/api", tags=["notifications"])
+if 'magic_learn' in _router_imports:
+    app.include_router(_router_imports['magic_learn'].router, prefix="/api", tags=["magic-learn"])
 
 # Log router import status
 if _router_errors:
