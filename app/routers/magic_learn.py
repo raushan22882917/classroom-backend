@@ -575,6 +575,432 @@ async def submit_feedback(
         raise HTTPException(status_code=500, detail=f"Feedback submission failed: {str(e)}")
 
 
+# Advanced Magic Learn Endpoints
+
+@router.post("/magic-learn/batch-analysis")
+async def batch_analyze_images(request: dict):
+    """Analyze multiple images in batch with parallel processing"""
+    try:
+        from app.services.advanced_magic_learn_service import advanced_image_service
+        from app.models.magic_learn import BatchAnalysisRequest
+        
+        batch_request = BatchAnalysisRequest(**request)
+        result = await advanced_image_service.analyze_batch(batch_request)
+        
+        logger.info(f"Batch analysis completed - Batch ID: {result.batch_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in batch analysis: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        return {
+            "success": False,
+            "batch_id": "",
+            "results": [],
+            "summary": "Batch analysis failed",
+            "total_processing_time": 0.0,
+            "error": str(e)
+        }
+
+
+@router.post("/magic-learn/realtime/start")
+async def start_realtime_analysis(stream_id: str):
+    """Start a real-time analysis stream"""
+    try:
+        from app.services.advanced_magic_learn_service import realtime_service
+        
+        result = await realtime_service.start_stream(stream_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error starting real-time analysis: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/realtime/process")
+async def process_realtime_frame(request: dict):
+    """Process a frame in real-time analysis stream"""
+    try:
+        from app.services.advanced_magic_learn_service import realtime_service
+        from app.models.magic_learn import RealTimeAnalysisRequest
+        
+        rt_request = RealTimeAnalysisRequest(**request)
+        result = await realtime_service.process_frame(rt_request)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error processing real-time frame: {str(e)}")
+        return {
+            "success": False,
+            "stream_id": request.get("stream_id", ""),
+            "frame_number": 0,
+            "analysis": f"Processing failed: {str(e)}",
+            "confidence": 0.0,
+            "detected_objects": [],
+            "timestamp": time.time()
+        }
+
+
+@router.post("/magic-learn/realtime/stop")
+async def stop_realtime_analysis(stream_id: str):
+    """Stop a real-time analysis stream"""
+    try:
+        from app.services.advanced_magic_learn_service import realtime_service
+        
+        result = await realtime_service.stop_stream(stream_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error stopping real-time analysis: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# Collaborative Learning Endpoints
+
+@router.post("/magic-learn/collaborate/create")
+async def create_collaborative_session(request: dict):
+    """Create a new collaborative learning session"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        from app.models.magic_learn import CollaborativeSessionRequest
+        
+        collab_request = CollaborativeSessionRequest(**request)
+        result = await collaborative_service.create_session(collab_request)
+        
+        logger.info(f"Collaborative session created - Session ID: {result.session_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error creating collaborative session: {str(e)}")
+        return {
+            "success": False,
+            "session_id": "",
+            "join_code": "",
+            "session_url": "",
+            "expires_at": time.time()
+        }
+
+
+@router.post("/magic-learn/collaborate/join")
+async def join_collaborative_session(session_id: str, user_id: str, join_code: str):
+    """Join an existing collaborative session"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        
+        result = await collaborative_service.join_session(session_id, user_id, join_code)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error joining collaborative session: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/collaborate/leave")
+async def leave_collaborative_session(session_id: str, user_id: str):
+    """Leave a collaborative session"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        
+        result = await collaborative_service.leave_session(session_id, user_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error leaving collaborative session: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/collaborate/update-state")
+async def update_participant_state(session_id: str, user_id: str, state_update: dict):
+    """Update participant state in collaborative session"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        
+        result = await collaborative_service.update_participant_state(session_id, user_id, state_update)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error updating participant state: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/magic-learn/collaborate/chat")
+async def send_chat_message(session_id: str, user_id: str, message: str):
+    """Send a chat message in collaborative session"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        
+        result = await collaborative_service.send_chat_message(session_id, user_id, message)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error sending chat message: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/magic-learn/collaborate/state")
+async def get_session_state(session_id: str, user_id: str):
+    """Get current session state for a participant"""
+    try:
+        from app.services.collaborative_learning_service import collaborative_service
+        
+        result = await collaborative_service.get_session_state(session_id, user_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error getting session state: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# AI Tutor Endpoints
+
+@router.post("/magic-learn/ai-tutor/chat")
+async def chat_with_ai_tutor(request: dict):
+    """Have a conversation with the AI tutor"""
+    try:
+        from app.services.collaborative_learning_service import ai_tutor_service
+        from app.models.magic_learn import AITutorRequest
+        
+        tutor_request = AITutorRequest(**request)
+        result = await ai_tutor_service.chat_with_tutor(tutor_request)
+        
+        logger.info(f"AI tutor interaction - User: {tutor_request.user_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in AI tutor chat: {str(e)}")
+        return {
+            "success": False,
+            "response": f"I apologize, but I encountered an error: {str(e)}",
+            "explanation_type": "error",
+            "follow_up_questions": [],
+            "related_concepts": [],
+            "practice_problems": [],
+            "confidence_score": 0.0
+        }
+
+
+# Learning Path Endpoints
+
+@router.post("/magic-learn/learning-path/generate")
+async def generate_learning_path(request: dict):
+    """Generate a personalized learning path"""
+    try:
+        from app.services.learning_path_service import learning_path_service
+        from app.models.magic_learn import LearningPathRequest
+        
+        path_request = LearningPathRequest(**request)
+        result = await learning_path_service.generate_learning_path(path_request)
+        
+        logger.info(f"Learning path generated - Path ID: {result.path_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating learning path: {str(e)}")
+        return {
+            "success": False,
+            "path_id": "",
+            "milestones": [],
+            "estimated_duration": 0,
+            "recommended_activities": [],
+            "progress_tracking": {}
+        }
+
+
+@router.get("/magic-learn/learning-path/{path_id}")
+async def get_learning_path(path_id: str):
+    """Get a learning path by ID"""
+    try:
+        from app.services.learning_path_service import learning_path_service
+        
+        path = await learning_path_service.get_learning_path(path_id)
+        
+        if path:
+            return {"success": True, "learning_path": path}
+        else:
+            return {"success": False, "error": "Learning path not found"}
+        
+    except Exception as e:
+        logger.error(f"Error getting learning path: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# Progress Tracking Endpoints
+
+@router.post("/magic-learn/progress/track")
+async def track_progress(request: dict):
+    """Track user learning progress"""
+    try:
+        from app.services.learning_path_service import progress_tracking_service
+        from app.models.magic_learn import ProgressTrackingRequest
+        
+        progress_request = ProgressTrackingRequest(**request)
+        result = await progress_tracking_service.track_progress(progress_request)
+        
+        logger.info(f"Progress tracked - User: {progress_request.user_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error tracking progress: {str(e)}")
+        return {
+            "success": False,
+            "user_id": request.get("user_id", ""),
+            "current_level": "unknown",
+            "progress_percentage": 0.0,
+            "achievements": [],
+            "next_recommendations": [],
+            "streak_count": 0
+        }
+
+
+@router.get("/magic-learn/progress/{user_id}")
+async def get_user_progress(user_id: str):
+    """Get user progress data"""
+    try:
+        from app.services.learning_path_service import progress_tracking_service
+        
+        progress = await progress_tracking_service.get_user_progress(user_id)
+        
+        if progress:
+            return {"success": True, "progress": progress.__dict__}
+        else:
+            return {"success": False, "error": "User progress not found"}
+        
+    except Exception as e:
+        logger.error(f"Error getting user progress: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/magic-learn/progress/{user_id}/analytics")
+async def get_progress_analytics(user_id: str):
+    """Get detailed progress analytics"""
+    try:
+        from app.services.learning_path_service import progress_tracking_service
+        
+        analytics = await progress_tracking_service.get_progress_analytics(user_id)
+        return {"success": True, "analytics": analytics}
+        
+    except Exception as e:
+        logger.error(f"Error getting progress analytics: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# Assessment Endpoints
+
+@router.post("/magic-learn/assessment/generate")
+async def generate_assessment(request: dict):
+    """Generate a comprehensive assessment"""
+    try:
+        from app.services.assessment_service import assessment_service
+        from app.models.magic_learn import AssessmentRequest
+        
+        assessment_request = AssessmentRequest(**request)
+        result = await assessment_service.generate_assessment(assessment_request)
+        
+        logger.info(f"Assessment generated - Assessment ID: {result.assessment_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating assessment: {str(e)}")
+        return {
+            "success": False,
+            "assessment_id": "",
+            "questions": [],
+            "time_limit": 0,
+            "scoring_rubric": {},
+            "learning_objectives": []
+        }
+
+
+@router.post("/magic-learn/assessment/{assessment_id}/submit")
+async def submit_assessment(assessment_id: str, user_id: str, answers: dict):
+    """Submit and grade an assessment"""
+    try:
+        from app.services.assessment_service import assessment_service
+        
+        result = await assessment_service.submit_assessment(assessment_id, user_id, answers)
+        
+        logger.info(f"Assessment submitted - Assessment ID: {assessment_id}, User: {user_id}, Success: {result['success']}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error submitting assessment: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/magic-learn/assessment/{assessment_id}")
+async def get_assessment(assessment_id: str):
+    """Get an assessment by ID"""
+    try:
+        from app.services.assessment_service import assessment_service
+        
+        assessment = await assessment_service.get_assessment(assessment_id)
+        
+        if assessment:
+            return {"success": True, "assessment": assessment.__dict__}
+        else:
+            return {"success": False, "error": "Assessment not found"}
+        
+    except Exception as e:
+        logger.error(f"Error getting assessment: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
+# Content Generation Endpoints
+
+@router.post("/magic-learn/content/generate")
+async def generate_educational_content(request: dict):
+    """Generate educational content"""
+    try:
+        from app.services.assessment_service import content_generation_service
+        from app.models.magic_learn import ContentGenerationRequest
+        
+        content_request = ContentGenerationRequest(**request)
+        result = await content_generation_service.generate_content(content_request)
+        
+        logger.info(f"Content generated - Content ID: {result.content_id}, Success: {result.success}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating content: {str(e)}")
+        return {
+            "success": False,
+            "content_id": "",
+            "title": "Content Generation Failed",
+            "content": f"Failed to generate content: {str(e)}",
+            "metadata": {},
+            "interactive_elements": [],
+            "assessment_questions": []
+        }
+
+
+@router.get("/magic-learn/content/{content_id}")
+async def get_generated_content(content_id: str):
+    """Get generated content by ID"""
+    try:
+        from app.services.assessment_service import content_generation_service
+        
+        content = await content_generation_service.get_generated_content(content_id)
+        
+        if content:
+            return {"success": True, "content": content}
+        else:
+            return {"success": False, "error": "Content not found"}
+        
+    except Exception as e:
+        logger.error(f"Error getting generated content: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+
 # Error handlers
 @router.exception_handler(Exception)
 async def magic_learn_exception_handler(request, exc):
