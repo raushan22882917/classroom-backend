@@ -217,12 +217,7 @@ except Exception as e:
     _router_errors.append(f"notification: {str(e)}")
     print(f"⚠ Warning: Failed to import notification router: {e}")
 
-try:
-    from app.routers import magic_learn
-    _router_imports['magic_learn'] = magic_learn
-except Exception as e:
-    _router_errors.append(f"magic_learn: {str(e)}")
-    print(f"⚠ Warning: Failed to import magic_learn router: {e}")
+# Magic learn router removed
 
 from app.utils.exceptions import (
     APIException,
@@ -258,7 +253,7 @@ try:
     # Ensure critical origins are always included
     required_origins = [
         "https://eduverse-dashboard-iota.vercel.app",
-        "http://localhost:8080",  # Magic Learn frontend
+        "http://localhost:8080",  # Frontend
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000"   # React dev server
     ]
@@ -303,10 +298,10 @@ app.add_middleware(
     max_age=3600,  # Cache preflight requests for 1 hour
 )
 
-# Add additional CORS handling for Magic Learn endpoints
+# Add additional CORS handling for all endpoints
 @app.middleware("http")
 async def add_cors_headers(request, call_next):
-    """Add CORS headers for all requests, especially for Magic Learn endpoints"""
+    """Add CORS headers for all requests"""
     
     # Get the origin from the request
     origin = request.headers.get("origin")
@@ -342,32 +337,15 @@ async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
 
-# Magic Learn direct endpoints for easier frontend access
-@app.get("/magic-learn")
-async def magic_learn_info():
-    """Magic Learn service information - direct access"""
+# Core API info endpoint
+@app.get("/info")
+async def api_info():
+    """API service information"""
     return {
-        "service": "Magic Learn Backend API",
+        "service": "Educational Platform API",
         "status": "running",
         "version": "1.0.0",
-        "features": ["DrawInAir", "Image Reader", "Plot Crafter"],
-        "endpoints": {
-            "health": "/api/magic-learn/health",
-            "drawinair": {
-                "start": "POST /api/magic-learn/drawinair/start",
-                "stop": "POST /api/magic-learn/drawinair/stop", 
-                "gesture": "GET /api/magic-learn/drawinair/gesture",
-                "analyze": "POST /api/magic-learn/drawinair/analyze",
-                "clear": "POST /api/magic-learn/drawinair/clear",
-                "process_frame": "POST /api/magic-learn/drawinair/process-frame"
-            },
-            "image_reader": {
-                "analyze": "POST /api/magic-learn/image-reader/analyze"
-            },
-            "plot_crafter": {
-                "generate": "POST /api/magic-learn/plot-crafter/generate"
-            }
-        }
+        "features": ["AI Tutoring", "Content Management", "Assessment"]
     }
     
     origin = request.headers.get("origin", "")
@@ -587,8 +565,7 @@ if 'messages' in _router_imports:
     app.include_router(_router_imports['messages'].router, prefix="/api", tags=["messages"])
 if 'notification' in _router_imports:
     app.include_router(_router_imports['notification'].router, prefix="/api", tags=["notifications"])
-if 'magic_learn' in _router_imports:
-    app.include_router(_router_imports['magic_learn'].router, prefix="/api", tags=["magic-learn"])
+# Magic learn router removed
 
 # Log router import status
 if _router_errors:

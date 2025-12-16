@@ -4,10 +4,9 @@ A machine learning-powered hand gesture recognition system that allows users to 
 
 ## 🎯 Core Features
 
-- **Real-time Hand Detection**: Uses computer vision to detect hand movements
-- **Gesture-based Drawing**: Draw by moving your hand in the camera view
-- **No MediaPipe Required**: Works with basic OpenCV for immediate use
-- **Educational Integration**: Connected to learning APIs for educational content
+- **Educational Platform**: Complete learning management system
+- **AI-Powered Features**: Gemini 2.5 Flash integration for intelligent responses
+- **Modern Architecture**: FastAPI backend with comprehensive services
 
 ## 📁 Project Structure
 
@@ -74,18 +73,11 @@ uvicorn app.main:app --reload
 
 ## 📊 API Endpoints
 
-### Core Hand Gesture APIs
-- `POST /api/magic-learn/landmarks/start` - Start landmark session
-- `POST /api/magic-learn/landmarks/process-frame` - Process video frame
-- `POST /api/magic-learn/landmarks/mark` - Mark custom landmarks
-- `GET /api/magic-learn/landmarks/analysis` - Get educational analysis
-
-### Drawing APIs
-- `POST /api/magic-learn/draw-in-air/start` - Start air drawing
-- `POST /api/magic-learn/draw-in-air/process-frame` - Process drawing frame
-- `POST /api/magic-learn/draw-in-air/analyze` - Analyze drawings
-
-See `API_SUMMARY.md` for complete documentation.
+### Core Educational APIs
+- AI-powered tutoring and assessment
+- Content management and delivery
+- Student progress tracking
+- Collaborative learning features
 
 ## 🎓 Educational Features
 
@@ -102,10 +94,10 @@ See `API_SUMMARY.md` for complete documentation.
 - NumPy
 - Camera access
 
-### Optional (for advanced features)
-- MediaPipe (`pip install mediapipe`)
+### Required
 - FastAPI server running
 - Internet connection for API features
+- Valid API keys (Gemini, Supabase, etc.)
 
 ## 🎯 Current Status
 
@@ -116,17 +108,11 @@ See `API_SUMMARY.md` for complete documentation.
 - API integration ready
 - Educational content available
 
-⚠️ **Optional Enhancements**:
-- MediaPipe integration (install `mediapipe` for better accuracy)
-- Advanced gesture recognition
-- Multi-hand support
-
 ## 🚀 Next Steps
 
-1. **Install MediaPipe** for improved hand detection:
-   ```bash
-   pip install mediapipe
-   ```
+1. **Configure API Keys** in your environment
+2. **Deploy to Cloud Run** using the provided Docker setup
+3. **Integrate with Frontend** using the comprehensive API
 
 2. **Test with different lighting conditions** for optimal performance
 
