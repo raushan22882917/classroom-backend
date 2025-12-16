@@ -621,7 +621,7 @@ class ExamService:
         """
         try:
             # Use Gemini to evaluate the answer - use faster model
-            model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+            model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
             try:
                 model = genai.GenerativeModel(model_name)
             except:
@@ -629,7 +629,7 @@ class ExamService:
                 try:
                     model = genai.GenerativeModel(model_name)
                 except:
-                    model = genai.GenerativeModel("gemini-3-pro-preview")
+                    model = genai.GenerativeModel("gemini-2.5-flash")
             
             prompt = f"""You are an expert examiner evaluating a student's answer.
 

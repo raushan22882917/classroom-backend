@@ -24,7 +24,7 @@ class HOTSService:
     
     def __init__(self):
         # Use faster model for better response times - can fallback if not available
-        model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+        model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
         try:
             self.model = genai.GenerativeModel(model_name)
         except:
@@ -33,8 +33,8 @@ class HOTSService:
             try:
                 self.model = genai.GenerativeModel(model_name)
             except:
-                # Final fallback to pro
-                self.model = genai.GenerativeModel('gemini-3-pro-preview')
+                # Final fallback to flash
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     async def generate_hots_questions(
         self,

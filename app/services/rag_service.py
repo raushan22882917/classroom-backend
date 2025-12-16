@@ -182,13 +182,13 @@ Answer (ONLY from context, no external knowledge):"""
             
             try:
                 # Use faster model for better response times
-                model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+                model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
                 try:
                     model = genai.GenerativeModel(model_name)
                 except Exception as model_error:
                     print(f"Error creating Gemini model {model_name}: {model_error}")
                     # Try fallback models
-                    fallback_models = ['gemini-1.5-flash', 'gemini-3-pro-preview', 'gemini-pro']
+                    fallback_models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
                     model = None
                     for fallback_name in fallback_models:
                         if fallback_name == model_name:

@@ -342,11 +342,33 @@ async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
 
-# Handle preflight OPTIONS requests for Magic Learn endpoints
-@app.options("/api/magic-learn/{path:path}")
-async def magic_learn_options(path: str, request):
-    """Handle preflight OPTIONS requests for Magic Learn endpoints"""
-    from fastapi import Response
+# Magic Learn direct endpoints for easier frontend access
+@app.get("/magic-learn")
+async def magic_learn_info():
+    """Magic Learn service information - direct access"""
+    return {
+        "service": "Magic Learn Backend API",
+        "status": "running",
+        "version": "1.0.0",
+        "features": ["DrawInAir", "Image Reader", "Plot Crafter"],
+        "endpoints": {
+            "health": "/api/magic-learn/health",
+            "drawinair": {
+                "start": "POST /api/magic-learn/drawinair/start",
+                "stop": "POST /api/magic-learn/drawinair/stop", 
+                "gesture": "GET /api/magic-learn/drawinair/gesture",
+                "analyze": "POST /api/magic-learn/drawinair/analyze",
+                "clear": "POST /api/magic-learn/drawinair/clear",
+                "process_frame": "POST /api/magic-learn/drawinair/process-frame"
+            },
+            "image_reader": {
+                "analyze": "POST /api/magic-learn/image-reader/analyze"
+            },
+            "plot_crafter": {
+                "generate": "POST /api/magic-learn/plot-crafter/generate"
+            }
+        }
+    }
     
     origin = request.headers.get("origin", "")
     

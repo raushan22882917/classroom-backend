@@ -19,12 +19,12 @@ class TeacherService:
     
     def __init__(self, supabase_client: Client):
         self.supabase = supabase_client
-        # Initialize Gemini model - use flash for speed, fallback to pro
+        # Initialize Gemini model - use 2.5 flash for best performance
         try:
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
         except:
             try:
-                self.model = genai.GenerativeModel('gemini-3-pro-preview')
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
             except:
                 self.model = genai.GenerativeModel('gemini-pro')
     

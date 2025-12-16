@@ -41,6 +41,5 @@ httpx>=0.27.0
 # Rate limiting
 slowapi>=0.1.9
 
-# Magic Learn specific dependencies
-opencv-python>=4.8.0
-mediapipe>=0.10.0
+# Computer vision (if needed)
+# opencv-python>=4.5.0

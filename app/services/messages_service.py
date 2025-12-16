@@ -304,7 +304,7 @@ Original message:
 Provide only the improved message, no additional explanation:"""
             
             # Use faster model for better response times
-            model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+            model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
             try:
                 model = genai.GenerativeModel(model_name)
             except:
@@ -313,7 +313,7 @@ Provide only the improved message, no additional explanation:"""
                 try:
                     model = genai.GenerativeModel(model_name)
                 except:
-                    model = genai.GenerativeModel('gemini-3-pro-preview')
+                    model = genai.GenerativeModel('gemini-2.5-flash')
             
             response = model.generate_content(prompt)
             
@@ -355,7 +355,7 @@ Format as a JSON array of strings:
 Only return the JSON array, no additional text:"""
             
             # Use faster model for better response times
-            model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+            model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
             try:
                 model = genai.GenerativeModel(model_name)
             except:
@@ -364,7 +364,7 @@ Only return the JSON array, no additional text:"""
                 try:
                     model = genai.GenerativeModel(model_name)
                 except:
-                    model = genai.GenerativeModel('gemini-3-pro-preview')
+                    model = genai.GenerativeModel('gemini-2.5-flash')
             
             response = model.generate_content(prompt)
             

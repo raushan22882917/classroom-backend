@@ -87,7 +87,7 @@ Only respond with the JSON, no additional text."""
             
             prompt = self.classification_prompt.format(question=text)
             # Use faster model for better response times
-            model_name = getattr(settings, 'gemini_model_fast', 'gemini-1.5-flash')
+            model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
             try:
                 model = genai.GenerativeModel(model_name)
             except:
@@ -95,7 +95,7 @@ Only respond with the JSON, no additional text."""
                 try:
                     model = genai.GenerativeModel(model_name)
                 except:
-                    model = genai.GenerativeModel('gemini-3-pro-preview')
+                    model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content(prompt)
             
             # Parse JSON response

@@ -32,7 +32,7 @@ COPY --from=builder /root/.local /root/.local
 COPY app/ ./app/
 
 # Copy test script
-COPY test_startup.py ./test_startup.py
+
 
 # Note: Service account credentials are not copied - Cloud Run uses
 # Application Default Credentials (ADC) via the service account attached to the service

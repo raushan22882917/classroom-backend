@@ -23,10 +23,10 @@ class EnhancedAITutorService:
         self.supabase = supabase_client
         genai.configure(api_key=settings.gemini_api_key)
         try:
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
         except:
             try:
-                self.model = genai.GenerativeModel('gemini-3-pro-preview')
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
             except:
                 self.model = genai.GenerativeModel('gemini-pro')
     
