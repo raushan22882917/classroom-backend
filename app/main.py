@@ -85,8 +85,8 @@ except Exception as e:
 _router_imports = {}
 _router_errors = []
 
-# Essential routers - import immediately
-essential_routers = ['health']
+# Essential routers - import immediately (critical for frontend)
+essential_routers = ['health', 'rag', 'doubt', 'ai_tutoring']
 for router_name in essential_routers:
     try:
         module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
@@ -98,8 +98,8 @@ for router_name in essential_routers:
 
 # Non-essential routers - defer import to startup event for faster boot
 _deferred_routers = [
-    'rag', 'doubt', 'homework', 'microplan', 'exam', 'quiz', 'videos', 
-    'hots', 'admin', 'progress', 'analytics', 'translation', 'ai_tutoring',
+    'homework', 'microplan', 'exam', 'quiz', 'videos', 
+    'hots', 'admin', 'progress', 'analytics', 'translation',
     'teacher_tools', 'wellbeing', 'teacher', 'messages', 'notification', 
     'memory_intelligence'
 ]
@@ -555,17 +555,68 @@ async def ai_tutoring_send_message_direct(request: Request):
             }
         )
 
-# Include essential routers immediately (only health for fast startup)
-if 'health' in _router_imports:
-    app.include_router(_router_imports['health'].router, prefix="/api", tags=["health"])
-    print("✓ Health router included")
+# Add direct RAG query endpoint as fallback
+@app.post("/api/rag/query")
+async def rag_query_direct(request: Request):
+    """
+    Direct route for RAG queries
+    This ensures the endpoint works even if router import fails
+    """
+    try:
+        from app.routers.rag import process_rag_query
+        from app.models.rag import RAGQuery
+        
+        # Parse request body
+        body = await request.json()
+        print(f"🔍 RAG query request: {body}")
+        
+        # Create RAGQuery object
+        rag_query = RAGQuery(**body)
+        
+        # Call the actual handler
+        return await process_rag_query(rag_query)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import process_rag_query: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "RAG service is initializing. Please try again in a moment.",
+                "fallback": "Using enhanced offline knowledge base"
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error in RAG query: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Failed to process RAG query: {str(e)}",
+                "fallback": "Using enhanced offline knowledge base"
+            }
+        )
+
+# Include essential routers immediately (critical for frontend)
+essential_router_configs = {
+    'health': ('/api', ['health']),
+    'rag': ('/api', ['rag']),
+    'doubt': ('/api', ['doubt']),
+    'ai_tutoring': ('/api', ['ai-tutoring'])
+}
+
+for router_name, (prefix, tags) in essential_router_configs.items():
+    if router_name in _router_imports:
+        app.include_router(_router_imports[router_name].router, prefix=prefix, tags=tags)
+        print(f"✓ Essential router included: {router_name}")
 
 # Function to load deferred routers
 def load_deferred_routers():
     """Load non-essential routers after startup"""
     router_configs = [
-        ('rag', '/api', ['rag']),
-        ('doubt', '/api', ['doubt']),
         ('homework', '/api', ['homework']),
         ('microplan', '/api', ['microplan']),
         ('exam', '/api', ['exam']),
@@ -576,7 +627,6 @@ def load_deferred_routers():
         ('progress', '/api', ['progress']),
         ('analytics', '/api', ['analytics']),
         ('translation', '/api', ['translation']),
-        ('ai_tutoring', '/api', ['ai-tutoring']),
         ('teacher_tools', '/api', ['teacher-tools']),
         ('teacher', '/api', ['teacher']),
         ('wellbeing', '/api', ['wellbeing']),
