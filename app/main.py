@@ -411,6 +411,40 @@ async def _handle_ai_tutoring_sessions(user_id: str, limit: int, offset: int):
             }
         )
 
+async def _handle_ai_tutoring_create_session(request_data: dict):
+    """Helper function to handle AI tutoring session creation"""
+    try:
+        from app.routers.ai_tutoring import create_session
+        from app.models.ai_features import CreateSessionRequest
+        
+        session_request = CreateSessionRequest(**request_data)
+        return await create_session(session_request)
+    except ImportError as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "AI Tutoring service is initializing. Please try again in a moment."
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error creating AI tutoring session: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Failed to create session: {str(e)}"
+            }
+        )
+
+async def _handle_ai_tutoring_session_messages(session_id: str, limit: int):
+    """Helper function to handle session messages requests"""
+    try:
+        from app.routers.ai_tutoring import get
+
 @app.get("/ai-tutoring/sessions")
 async def ai_tutoring_sessions_alias(
     user_id: str = Query(..., description="User ID"),
