@@ -25,6 +25,7 @@ class RAGQuery(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20)
     confidence_threshold: float = Field(default=0.7, ge=0, le=1)
     filters: dict = Field(default_factory=dict)
+    max_tokens: Optional[int] = Field(default=500, ge=50, le=2000)
 
 
 class RAGContext(BaseModel):

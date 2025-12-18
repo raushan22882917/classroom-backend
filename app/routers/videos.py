@@ -9,8 +9,7 @@ from supabase import Client
 from app.models.content import Video, VideoCreate, Timestamp
 from app.models.base import Subject
 from app.services.youtube_service import youtube_service
-from app.services.embedding_service import embedding_service
-from app.services.vector_db_service import vector_db_service
+# Note: Video indexing functionality removed - now handled by Google RAG services
 from app.config import settings
 from app.utils.exceptions import APIException
 from supabase import create_client
@@ -385,34 +384,9 @@ async def index_video_transcript(
             chunk_overlap=50
         )
         
-        # Generate embeddings for each chunk
-        for i, chunk in enumerate(chunks):
-            try:
-                # Generate embedding
-                embedding = await embedding_service.generate_embedding(chunk)
-                
-                # Create metadata for this chunk
-                chunk_metadata = {
-                    **metadata,
-                    'video_id': video_id,
-                    'youtube_id': youtube_id,
-                    'chunk_index': i,
-                    'chunk_text': chunk[:200]  # Store preview
-                }
-                
-                # Index in vector database
-                embedding_id = f"video_{video_id}_chunk_{i}"
-                await vector_db_service.upsert_vector(
-                    vector_id=embedding_id,
-                    embedding=embedding,
-                    metadata=chunk_metadata
-                )
-                
-            except Exception as e:
-                logger.error(f"Error indexing chunk {i} for video {youtube_id}: {str(e)}")
-                continue
-        
-        logger.info(f"Successfully indexed {len(chunks)} chunks for video {youtube_id}")
+        # Video indexing now handled by Google RAG services
+        logger.info(f"Video indexing skipped for {youtube_id} - handled by Google RAG services")
+        logger.info(f"Would have indexed {len(chunks)} chunks for video {youtube_id}")
         
     except Exception as e:
         logger.error(f"Error in background indexing task for video {youtube_id}: {str(e)}")

@@ -42,10 +42,14 @@ class Settings(BaseSettings):
     # Embedding batch configuration for better throughput
     embedding_batch_size: int = 50  # Increased from 10 for faster processing
     
-    # Vector Database Configuration (using Google Cloud - Pinecone is optional)
-    pinecone_api_key: str = ""  # Optional - only needed if using Pinecone instead of Vertex AI
-    pinecone_environment: str = ""  # Optional - only needed if using Pinecone
-    pinecone_index_name: str = "class12-learning"  # Used as index name for both Pinecone and Vertex AI
+    # Google RAG Configuration (Vertex AI Search)
+    vertex_search_engine_id: str = ""  # Vertex AI Search engine ID
+    vertex_data_store_id: str = ""  # Vertex AI Search data store ID
+    
+    # Legacy Pinecone config (deprecated - keeping for backward compatibility)
+    pinecone_api_key: str = ""  # Deprecated - use Google RAG instead
+    pinecone_environment: str = ""  # Deprecated - use Google RAG instead
+    pinecone_index_name: str = "class12-learning"  # Deprecated - use Google RAG instead
     
     # Redis Configuration
     redis_host: str = "localhost"
@@ -140,9 +144,11 @@ Please set these in Cloud Run service configuration.
         gemini_models_fast_chain: str = "gemini-2.5-flash"
         gemini_models_quality_chain: str = "gemini-3.0-pro"
         embedding_batch_size: int = 50
-        pinecone_api_key: str = ""
-        pinecone_environment: str = ""
-        pinecone_index_name: str = "class12-learning"
+        vertex_search_engine_id: str = ""
+        vertex_data_store_id: str = ""
+        pinecone_api_key: str = ""  # Deprecated
+        pinecone_environment: str = ""  # Deprecated
+        pinecone_index_name: str = "class12-learning"  # Deprecated
         redis_host: str = "localhost"
         redis_port: int = 6379
         redis_password: str = ""

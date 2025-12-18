@@ -32,7 +32,8 @@ async def config_check():
             "app_env": "unknown",
             "vertex_ai_location": "unknown",
             "vertex_ai_embedding_model": "unknown",
-            "pinecone_index_name": "unknown",
+            "google_rag_engine": "vertex_ai_search",
+            "vertex_search_engine_id": "not_configured",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": "Settings module not available"
@@ -43,7 +44,8 @@ async def config_check():
             "app_env": "unknown",
             "vertex_ai_location": "unknown",
             "vertex_ai_embedding_model": "unknown",
-            "pinecone_index_name": "unknown",
+            "google_rag_engine": "vertex_ai_search",
+            "vertex_search_engine_id": "not_configured",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": "Failed to load settings"
@@ -69,7 +71,8 @@ async def config_check():
             "app_env": getattr(settings, "app_env", "unknown"),
             "vertex_ai_location": getattr(settings, "vertex_ai_location", "unknown"),
             "vertex_ai_embedding_model": getattr(settings, "vertex_ai_embedding_model", "unknown"),
-            "pinecone_index_name": getattr(settings, "pinecone_index_name", "unknown"),
+            "google_rag_engine": "vertex_ai_search",
+            "vertex_search_engine_id": getattr(settings, "vertex_search_engine_id", "not_configured"),
             "rate_limit_per_minute": getattr(settings, "rate_limit_per_minute", 100),
             "cors_origins": cors_origins
         }
@@ -79,7 +82,8 @@ async def config_check():
             "app_env": "unknown",
             "vertex_ai_location": "unknown",
             "vertex_ai_embedding_model": "unknown",
-            "pinecone_index_name": "unknown",
+            "google_rag_engine": "vertex_ai_search",
+            "vertex_search_engine_id": "not_configured",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": f"Partial config load: {str(e)}"

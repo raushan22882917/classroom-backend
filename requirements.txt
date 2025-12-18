@@ -6,9 +6,12 @@ python-multipart>=0.0.20
 # Database
 supabase>=2.27.0
 
-# Google AI
+# Google AI and Cloud
 google-generativeai>=0.8.0
 google-api-python-client>=2.187.0
+google-cloud-aiplatform>=1.60.0
+google-cloud-discoveryengine>=0.11.0
+google-auth>=2.23.0
 
 # Core utilities
 pydantic>=2.10.0,<3.0.0

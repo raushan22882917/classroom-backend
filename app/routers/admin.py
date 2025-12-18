@@ -306,11 +306,13 @@ async def get_index_status(request: Request):
     - Vector database statistics
     """
     try:
-        from app.services.vector_db_service import vector_db_service
-        
-        # Get vector DB stats
-        await vector_db_service.initialize()
-        vector_stats = await vector_db_service.get_index_stats()
+        # Vector DB stats now handled by Google RAG services
+        logger.info("Vector DB stats request - now handled by Google RAG services")
+        vector_stats = {
+            "total_vector_count": 0,
+            "storage_type": "google_rag_services",
+            "note": "Vector storage handled by Google RAG services"
+        }
         
         # Get content counts from database
         content_response = content_service.supabase.table("content")\

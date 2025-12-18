@@ -5,22 +5,15 @@
 # Services will be imported when actually needed by routers
 
 __all__ = [
-    "embedding_service",
-    "vector_db_service",
     "chunking_service",
     "content_indexer",
     "rag_service",
+    "google_rag_service",
     "hots_service"
 ]
 
 # Lazy import functions - import services only when needed
-def get_embedding_service():
-    from app.services.embedding_service import embedding_service
-    return embedding_service
-
-def get_vector_db_service():
-    from app.services.vector_db_service import vector_db_service
-    return vector_db_service
+# Note: embedding_service and vector_db_service removed - now using Google RAG service
 
 def get_chunking_service():
     from app.services.chunking_service import chunking_service
