@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     # Google RAG Configuration (Vertex AI Search)
     vertex_search_engine_id: str = ""  # Vertex AI Search engine ID
     vertex_data_store_id: str = ""  # Vertex AI Search data store ID
+    gcs_bucket_name: str = ""  # Google Cloud Storage bucket for document storage
     
     # Legacy Pinecone config (deprecated - keeping for backward compatibility)
     pinecone_api_key: str = ""  # Deprecated - use Google RAG instead
@@ -146,6 +147,7 @@ Please set these in Cloud Run service configuration.
         embedding_batch_size: int = 50
         vertex_search_engine_id: str = ""
         vertex_data_store_id: str = ""
+        gcs_bucket_name: str = ""
         pinecone_api_key: str = ""  # Deprecated
         pinecone_environment: str = ""  # Deprecated
         pinecone_index_name: str = "class12-learning"  # Deprecated
