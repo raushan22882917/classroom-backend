@@ -217,6 +217,13 @@ except Exception as e:
     _router_errors.append(f"notification: {str(e)}")
     print(f"⚠ Warning: Failed to import notification router: {e}")
 
+try:
+    from app.routers import memory_intelligence
+    _router_imports['memory_intelligence'] = memory_intelligence
+except Exception as e:
+    _router_errors.append(f"memory_intelligence: {str(e)}")
+    print(f"⚠ Warning: Failed to import memory_intelligence router: {e}")
+
 # Magic learn router removed
 
 from app.utils.exceptions import (
@@ -565,6 +572,8 @@ if 'messages' in _router_imports:
     app.include_router(_router_imports['messages'].router, prefix="/api", tags=["messages"])
 if 'notification' in _router_imports:
     app.include_router(_router_imports['notification'].router, prefix="/api", tags=["notifications"])
+if 'memory_intelligence' in _router_imports:
+    app.include_router(_router_imports['memory_intelligence'].router, prefix="/api", tags=["memory-intelligence"])
 # Magic learn router removed
 
 # Log router import status

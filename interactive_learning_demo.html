@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Learning Platform - MemVerge & Neo4j Demo</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            color: #2E86AB;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            text-align: center;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .nav-tab {
+            background: #2E86AB;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(46, 134, 171, 0.3);
+        }
+        
+        .nav-tab:hover, .nav-tab.active {
+            background: #A23B72;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(162, 59, 114, 0.4);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .demo-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .demo-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section-title {
+            color: #2E86AB;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: #2E86AB;
+        }
+        
+        .feature-card h3 {
+            color: #2E86AB;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .interactive-demo {
+            min-height: 400px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .control-panel {
+            background: #2E86AB;
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .control-group label {
+            min-width: 120px;
+            font-weight: 500;
+        }
+        
+        .control-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            background: #A23B72;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #8B2F5F;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 47, 95, 0.3);
+        }
+        
+        .btn-primary {
+            background: #2E86AB;
+        }
+        
+        .btn-primary:hover {
+            background: #1F5F7A;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #2E86AB, #A23B72);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #2E86AB, #A23B72);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .knowledge-graph {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #2E86AB;
+            border-radius: 10px;
+            background: white;
+        }
+        
+        .memory-timeline {
+            width: 100%;
+            height: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .memory-entry {
+            background: #f8f9fa;
+            border-left: 4px solid #2E86AB;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s;
+        }
+        
+        .memory-entry:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+        
+        .memory-timestamp {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .memory-content {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .simulation-canvas {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2E86AB;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2E86AB;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .chat-interface {
+            background: white;
+            border-radius: 10px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #2E86AB;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: #2E86AB;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.ai {
+            background: #e3f2fd;
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🧠 Interactive Learning Platform</h1>
+        <p>Powered by MemVerge MemMachine & Neo4j Graph Database</p>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showSection('memory-intelligence')">Memory Intelligence</button>
+            <button class="nav-tab" onclick="showSection('knowledge-graph')">Knowledge Graph</button>
+            <button class="nav-tab" onclick="showSection('interactive-learning')">Interactive Learning</button>
+            <button class="nav-tab" onclick="showSection('ai-tutoring')">Enhanced AI Tutor</button>
+            <button class="nav-tab" onclick="showSection('analytics')">Analytics</button>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Memory Intelligence Section -->
+        <section id="memory-intelligence" class="demo-section active">
+            <h2 class="section-title">🧠 MemVerge MemMachine - Persistent Long-term Memory</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📊 Learning Pattern Analysis</h3>
+                    <div class="interactive-demo">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value" id="total-sessions">127</div>
+                                <div class="metric-label">Total Sessions</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="learning-velocity">1.3x</div>
+                                <div class="metric-label">Learning Velocity</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="retention-rate">87%</div>
+                                <div class="metric-label">Retention Rate</div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-panel">
+                            <div class="control-group">
+                                <label>User ID:</label>
+                                <input type="text" class="control-input" id="user-id" value="student_001" placeholder="Enter user ID">
+                            </div>
+                            <button class="btn btn-primary" onclick="analyzePatterns()">Analyze Learning Patterns</button>
+                            <button class="btn" onclick="generateInsights()">Generate AI Insights</button>
+                        </div>
+                        
+                        <div id="pattern-chart"></div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🕒 Memory Timeline</h3>
+                    <div class="interactive-demo">
+                        <div class="memory-timeline" id="memory-timeline">
+                            <div class="memory-entry">
+                                <div class="memory-timestamp">2024-12-18 14:30:00</div>
+                                <div class="memory-content">Completed Quadratic Equations - Accuracy: 92%</div>
+                            </div>
+                            <div class="memory-entry">
+                                <div class="memory-timestamp">2024-12-18 13:15:00</div>
+                                <div class="memory-content">Started Calculus Derivatives - Engagement: High</div>
+                            </div>
+                            <div class="memory-entry">
+                                <div class="memory-timestamp">2024-12-18 12:00:00</div>
+                                <div class="memory-content">Physics Lab Session - Projectile Motion</div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn" onclick="loadMoreMemories()">Load More Memories</button>
+                        <button class="btn btn-primary" onclick="exportMemoryData()">Export Data</button>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 Adaptive Recommendations</h3>
+                    <div class="interactive-demo">
+                        <div id="recommendations-container">
+                            <div class="recommendation-item" style="background: #e3f2fd; padding: 1rem; margin: 0.5rem 0; border-radius: 8px; cursor: pointer;" onclick="startLearning('Derivatives')">
+                                <strong>📈 Derivatives</strong><br>
+                                Difficulty: Advanced | Duration: 45 min<br>
+                                <div class="progress-bar" style="margin-top: 0.5rem;">
+                                    <div class="progress-fill" style="width: 85%;"></div>
+                                </div>
+                                Confidence: 85%
+                            </div>
+                            
+                            <div class="recommendation-item" style="background: #f3e5f5; padding: 1rem; margin: 0.5rem 0; border-radius: 8px; cursor: pointer;" onclick="startLearning('Organic Chemistry')">
+                                <strong>🧪 Organic Chemistry</strong><br>
+                                Difficulty: Intermediate | Duration: 30 min<br>
+                                <div class="progress-bar" style="margin-top: 0.5rem;">
+                                    <div class="progress-fill" style="width: 72%;"></div>
+                                </div>
+                                Confidence: 72%
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="refreshRecommendations()">Refresh Recommendations</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Knowledge Graph Section -->
+        <section id="knowledge-graph" class="demo-section">
+            <h2 class="section-title">🕸️ Neo4j Knowledge Graph - Deep Connected Reasoning</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card" style="grid-column: 1 / -1;">
+                    <h3>🌐 Interactive Knowledge Network</h3>
+                    <div class="interactive-demo">
+                        <div class="control-panel">
+                            <div class="control-group">
+                                <label>Subject Filter:</label>
+                                <select class="control-input" id="subject-filter" onchange="filterGraph()">
+                                    <option value="all">All Subjects</option>
+                                    <option value="mathematics">Mathematics</option>
+                                    <option value="physics">Physics</option>
+                                    <option value="chemistry">Chemistry</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>Difficulty Level:</label>
+                                <input type="range" class="control-input" id="difficulty-slider" min="1" max="5" value="3" onchange="filterByDifficulty(this.value)">
+                                <span id="difficulty-value">3</span>
+                            </div>
+                            <button class="btn btn-primary" onclick="findLearningPath()">Find Learning Path</button>
+                            <button class="btn" onclick="analyzeGaps()">Analyze Knowledge Gaps</button>
+                        </div>
+                        
+                        <div class="knowledge-graph" id="knowledge-graph"></div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 Learning Path Optimization</h3>
+                    <div class="interactive-demo">
+                        <div id="learning-path-display">
+                            <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <strong>Step 1:</strong> Linear Equations → <span style="color: #4caf50;">✓ Mastered</span>
+                            </div>
+                            <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <strong>Step 2:</strong> Quadratic Equations → <span style="color: #ff9800;">📚 In Progress</span>
+                            </div>
+                            <div style="background: #fce4ec; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <strong>Step 3:</strong> Derivatives → <span style="color: #e91e63;">🔒 Locked</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value">3</div>
+                                <div class="metric-label">Steps Remaining</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">2.5h</div>
+                                <div class="metric-label">Est. Duration</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📈 Concept Mastery Tracking</h3>
+                    <div class="interactive-demo">
+                        <div id="mastery-chart"></div>
+                        <button class="btn" onclick="updateProgress()">Update Progress</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Interactive Learning Section -->
+        <section id="interactive-learning" class="demo-section">
+            <h2 class="section-title">🎮 Interactive Learning Components</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📊 Algebra Visualizer</h3>
+                    <div class="interactive-demo">
+                        <div class="control-panel">
+                            <div class="control-group">
+                                <label>Equation:</label>
+                                <input type="text" class="control-input" id="equation-input" value="y = 2x + 3" placeholder="Enter equation">
+                            </div>
+                            <div class="control-group">
+                                <label>Parameter A:</label>
+                                <input type="range" class="control-input" id="param-a" min="-10" max="10" value="2" step="0.1" onchange="updateGraph()">
+                                <span id="param-a-value">2</span>
+                            </div>
+                            <div class="control-group">
+                                <label>Parameter B:</label>
+                                <input type="range" class="control-input" id="param-b" min="-10" max="10" value="3" step="0.1" onchange="updateGraph()">
+                                <span id="param-b-value">3</span>
+                            </div>
+                        </div>
+                        
+                        <div id="algebra-graph"></div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🔬 Physics Simulator</h3>
+                    <div class="interactive-demo">
+                        <div class="control-panel">
+                            <div class="control-group">
+                                <label>Initial Velocity:</label>
+                                <input type="range" class="control-input" id="velocity" min="10" max="100" value="50" onchange="updateSimulation()">
+                                <span id="velocity-value">50 m/s</span>
+                            </div>
+                            <div class="control-group">
+                                <label>Launch Angle:</label>
+                                <input type="range" class="control-input" id="angle" min="0" max="90" value="45" onchange="updateSimulation()">
+                                <span id="angle-value">45°</span>
+                            </div>
+                            <button class="btn btn-primary" onclick="runSimulation()">Run Simulation</button>
+                            <button class="btn" onclick="resetSimulation()">Reset</button>
+                        </div>
+                        
+                        <div class="simulation-canvas" id="physics-canvas">
+                            <canvas width="100%" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🧪 Chemistry Lab</h3>
+                    <div class="interactive-demo">
+                        <div class="control-panel">
+                            <div class="control-group">
+                                <label>Reactant A:</label>
+                                <select class="control-input" id="reactant-a">
+                                    <option value="H2">Hydrogen (H₂)</option>
+                                    <option value="O2">Oxygen (O₂)</option>
+                                    <option value="Na">Sodium (Na)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>Reactant B:</label>
+                                <select class="control-input" id="reactant-b">
+                                    <option value="O2">Oxygen (O₂)</option>
+                                    <option value="Cl2">Chlorine (Cl₂)</option>
+                                    <option value="H2O">Water (H₂O)</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="mixReactants()">Mix Reactants</button>
+                        </div>
+                        
+                        <div id="reaction-display" style="background: #f0f8ff; padding: 2rem; border-radius: 10px; text-align: center; font-size: 1.2rem;">
+                            <div>🧪 Ready to mix reactants</div>
+                            <div id="reaction-equation" style="margin-top: 1rem; font-family: monospace;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 Adaptive Quiz Engine</h3>
+                    <div class="interactive-demo">
+                        <div id="quiz-container">
+                            <div id="question-display" style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                                <h4>Question 1 of 5</h4>
+                                <p>What is the derivative of x²?</p>
+                                
+                                <div style="margin-top: 1rem;">
+                                    <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                                        <input type="radio" name="answer" value="a"> A) x
+                                    </label>
+                                    <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                                        <input type="radio" name="answer" value="b"> B) 2x
+                                    </label>
+                                    <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                                        <input type="radio" name="answer" value="c"> C) x²
+                                    </label>
+                                    <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                                        <input type="radio" name="answer" value="d"> D) 2x²
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                            <button class="btn" onclick="getHint()">Get Hint</button>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="quiz-progress" style="width: 20%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- AI Tutoring Section -->
+        <section id="ai-tutoring" class="demo-section">
+            <h2 class="section-title">🤖 Enhanced AI Tutor with MemMachine & Neo4j</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card" style="grid-column: 1 / -1;">
+                    <h3>💬 Enhanced AI Tutor with Persistent Memory</h3>
+                    <div class="interactive-demo">
+                        <div style="background: linear-gradient(135deg, #2E86AB, #A23B72); color: white; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                            <h4>🧠 Enhanced Intelligence Features:</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                                <div>
+                                    <strong>MemMachine Integration</strong><br>
+                                    <small>Remembers all conversations and learning patterns</small>
+                                </div>
+                                <div>
+                                    <strong>Neo4j Knowledge Graph</strong><br>
+                                    <small>Understands concept relationships and prerequisites</small>
+                                </div>
+                                <div>
+                                    <strong>Interactive Components</strong><br>
+                                    <small>Creates hands-on learning experiences</small>
+                                </div>
+                                <div>
+                                    <strong>Personalized Insights</strong><br>
+                                    <small>Adapts to your learning style and progress</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-interface">
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="message ai">
+                                    <strong>🧠 Enhanced AI Tutor:</strong> Welcome back! I remember our previous conversations and your learning progress. You've completed 15 sessions with 87% average accuracy. Your strongest area is algebra (92% mastery). 
+                                    
+                                    <br><br><strong>🎯 What I can help you with:</strong>
+                                    <br>• Smart Q&A with memory of our conversations
+                                    <br>• Interactive simulations and visualizations  
+                                    <br>• Personalized learning paths based on your progress
+                                    <br>• Knowledge mapping showing how concepts connect
+                                    <br>• Real-time progress tracking and insights
+                                    
+                                    <br><br>What would you like to explore today?
+                                </div>
+                                <div class="message user">
+                                    <strong>You:</strong> Can you show me how calculus connects to algebra?
+                                </div>
+                                <div class="message ai">
+                                    <strong>🧠 Enhanced AI Tutor:</strong> Great question about concept relationships! Using Neo4j knowledge graph analysis:
+                                    
+                                    <br><br><strong>🕸️ Knowledge Connections:</strong>
+                                    <br>• Algebra → Functions → Limits → Derivatives → Integrals
+                                    <br>• Your mastery: Algebra (92%) → Functions (78%) → Limits (65%) → Derivatives (45%)
+                                    
+                                    <br><br><strong>📈 Recommended Path:</strong>
+                                    <br>1. Strengthen limits (current: 65% mastery)
+                                    <br>2. Practice derivative rules (next logical step)  
+                                    <br>3. Connect to real-world applications
+                                    
+                                    <br><br>Would you like an interactive calculus simulator to visualize these connections?
+                                </div>
+                            </div>
+                            
+                            <div class="chat-input-area">
+                                <input type="text" class="chat-input" id="chat-input" placeholder="Try: 'Show me interactive learning' or 'What's my progress?' or 'Help with homework'" onkeypress="handleChatInput(event)">
+                                <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                            <strong>💡 Try these enhanced features:</strong>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                                <button class="btn" onclick="document.getElementById('chat-input').value='What do you remember about my learning?'; sendMessage();">Memory Query</button>
+                                <button class="btn" onclick="document.getElementById('chat-input').value='Show me interactive learning components'; sendMessage();">Interactive Learning</button>
+                                <button class="btn" onclick="document.getElementById('chat-input').value='How do concepts connect in mathematics?'; sendMessage();">Knowledge Graph</button>
+                                <button class="btn" onclick="document.getElementById('chat-input').value='Create a personalized study plan for me'; sendMessage();">Personalized Plan</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 Personalized Learning Path</h3>
+                    <div class="interactive-demo">
+                        <div id="learning-path-viz"></div>
+                        <button class="btn btn-primary" onclick="generatePersonalizedPath()">Generate New Path</button>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📊 Real-time Performance</h3>
+                    <div class="interactive-demo">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value" id="current-accuracy">89%</div>
+                                <div class="metric-label">Current Accuracy</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="engagement-score">94%</div>
+                                <div class="metric-label">Engagement</div>
+                            </div>
+                        </div>
+                        
+                        <div id="performance-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Analytics Section -->
+        <section id="analytics" class="demo-section">
+            <h2 class="section-title">📈 Advanced Learning Analytics</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📊 Learning Dashboard</h3>
+                    <div class="interactive-demo">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value">15</div>
+                                <div class="metric-label">Concepts Mastered</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">42h</div>
+                                <div class="metric-label">Study Time</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">7</div>
+                                <div class="metric-label">Day Streak</div>
+                            </div>
+                        </div>
+                        
+                        <div id="dashboard-chart"></div>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🧠 Memory Retention Analysis</h3>
+                    <div class="interactive-demo">
+                        <div id="retention-chart"></div>
+                        <button class="btn" onclick="analyzeRetention()">Analyze Retention</button>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 Predictive Analytics</h3>
+                    <div class="interactive-demo">
+                        <div id="prediction-display" style="background: #e8f5e8; padding: 1.5rem; border-radius: 10px;">
+                            <h4>📈 Performance Predictions</h4>
+                            <p><strong>Next Week:</strong> 92% accuracy expected</p>
+                            <p><strong>Optimal Study Time:</strong> 2-4 PM</p>
+                            <p><strong>Recommended Focus:</strong> Calculus Integration</p>
+                            <p><strong>Risk Areas:</strong> Organic Chemistry reactions</p>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="generatePredictions()">Update Predictions</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentSection = 'memory-intelligence';
+        let learningData = {
+            sessions: 127,
+            velocity: 1.3,
+            retention: 87,
+            accuracy: 89,
+            engagement: 94
+        };
+        
+        // Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.demo-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            currentSection = sectionId;
+            
+            // Initialize section-specific content
+            initializeSection(sectionId);
+        }
+        
+        function initializeSection(sectionId) {
+            switch(sectionId) {
+                case 'memory-intelligence':
+                    initializeMemoryIntelligence();
+                    break;
+                case 'knowledge-graph':
+                    initializeKnowledgeGraph();
+                    break;
+                case 'interactive-learning':
+                    initializeInteractiveLearning();
+                    break;
+                case 'ai-tutoring':
+                    initializeAITutoring();
+                    break;
+                case 'analytics':
+                    initializeAnalytics();
+                    break;
+            }
+        }
+        
+        // Memory Intelligence Functions
+        function initializeMemoryIntelligence() {
+            createPatternChart();
+            animateMetrics();
+        }
+        
+        function createPatternChart() {
+            const data = [{
+                x: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                y: [65, 72, 78, 85, 90, 88, 92],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Learning Progress',
+                line: {color: '#2E86AB', width: 3},
+                marker: {size: 8, color: '#A23B72'}
+            }];
+            
+            const layout = {
+                title: 'Weekly Learning Pattern',
+                xaxis: {title: 'Day'},
+                yaxis: {title: 'Performance Score'},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('pattern-chart', data, layout, {responsive: true});
+        }
+        
+        function animateMetrics() {
+            animateCounter('total-sessions', 0, learningData.sessions, 2000);
+            animateCounter('learning-velocity', 0, learningData.velocity, 2000, 'x');
+            animateCounter('retention-rate', 0, learningData.retention, 2000, '%');
+        }
+        
+        function animateCounter(elementId, start, end, duration, suffix = '') {
+            const element = document.getElementById(elementId);
+            const startTime = performance.now();
+            
+            function updateCounter(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const current = start + (end - start) * progress;
+                
+                element.textContent = Math.round(current * 10) / 10 + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+        
+        function analyzePatterns() {
+            showNotification('Analyzing learning patterns...', 'info');
+            
+            setTimeout(() => {
+                // Simulate pattern analysis
+                const insights = [
+                    'Peak learning time: 2-4 PM',
+                    'Best subject: Mathematics (92% avg)',
+                    'Improvement area: Chemistry reactions',
+                    'Optimal session length: 45 minutes'
+                ];
+                
+                showNotification('Pattern analysis complete!', 'success');
+                console.log('Learning insights:', insights);
+            }, 2000);
+        }
+        
+        function generateInsights() {
+            showNotification('Generating AI insights...', 'info');
+            
+            setTimeout(() => {
+                showNotification('AI insights generated! Check console for details.', 'success');
+            }, 1500);
+        }
+        
+        function loadMoreMemories() {
+            const timeline = document.getElementById('memory-timeline');
+            const newMemory = document.createElement('div');
+            newMemory.className = 'memory-entry';
+            newMemory.innerHTML = `
+                <div class="memory-timestamp">${new Date().toLocaleString()}</div>
+                <div class="memory-content">New learning session loaded - Interactive Demo</div>
+            `;
+            timeline.insertBefore(newMemory, timeline.firstChild);
+        }
+        
+        function exportMemoryData() {
+            showNotification('Memory data exported successfully!', 'success');
+        }
+        
+        function refreshRecommendations() {
+            showNotification('Refreshing recommendations...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Recommendations updated based on latest performance!', 'success');
+            }, 1000);
+        }
+        
+        function startLearning(concept) {
+            showNotification(`Starting learning session: ${concept}`, 'success');
+        }
+        
+        // Knowledge Graph Functions
+        function initializeKnowledgeGraph() {
+            createKnowledgeGraph();
+            createMasteryChart();
+        }
+        
+        function createKnowledgeGraph() {
+            // Create a simple network visualization
+            const nodes = [
+                {id: 1, label: 'Algebra', color: '#2E86AB', level: 1},
+                {id: 2, label: 'Linear Equations', color: '#4CAF50', level: 2},
+                {id: 3, label: 'Quadratic Equations', color: '#FF9800', level: 2},
+                {id: 4, label: 'Calculus', color: '#E91E63', level: 3},
+                {id: 5, label: 'Derivatives', color: '#9C27B0', level: 4},
+                {id: 6, label: 'Physics', color: '#2E86AB', level: 1},
+                {id: 7, label: 'Mechanics', color: '#4CAF50', level: 2}
+            ];
+            
+            const edges = [
+                {from: 1, to: 2},
+                {from: 1, to: 3},
+                {from: 2, to: 3},
+                {from: 3, to: 4},
+                {from: 4, to: 5},
+                {from: 6, to: 7}
+            ];
+            
+            const container = document.getElementById('knowledge-graph');
+            const data = {nodes: nodes, edges: edges};
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: {size: 14, color: 'white'},
+                    borderWidth: 2
+                },
+                edges: {
+                    width: 2,
+                    color: '#848484'
+                },
+                physics: {
+                    enabled: true,
+                    stabilization: {iterations: 100}
+                }
+            };
+            
+            if (typeof vis !== 'undefined') {
+                new vis.Network(container, data, options);
+            }
+        }
+        
+        function createMasteryChart() {
+            const data = [{
+                x: ['Algebra', 'Linear Eq.', 'Quadratic Eq.', 'Calculus', 'Derivatives'],
+                y: [95, 88, 75, 60, 30],
+                type: 'bar',
+                marker: {
+                    color: ['#4CAF50', '#4CAF50', '#FF9800', '#E91E63', '#E91E63']
+                }
+            }];
+            
+            const layout = {
+                title: 'Concept Mastery Levels',
+                yaxis: {title: 'Mastery %'},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('mastery-chart', data, layout, {responsive: true});
+        }
+        
+        function filterGraph() {
+            showNotification('Filtering knowledge graph...', 'info');
+        }
+        
+        function filterByDifficulty(value) {
+            document.getElementById('difficulty-value').textContent = value;
+            showNotification(`Filtering by difficulty level: ${value}`, 'info');
+        }
+        
+        function findLearningPath() {
+            showNotification('Calculating optimal learning path...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Optimal learning path found!', 'success');
+            }, 1500);
+        }
+        
+        function analyzeGaps() {
+            showNotification('Analyzing knowledge gaps...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Knowledge gap analysis complete!', 'success');
+            }, 2000);
+        }
+        
+        function updateProgress() {
+            showNotification('Progress updated!', 'success');
+            createMasteryChart(); // Refresh the chart
+        }
+        
+        // Interactive Learning Functions
+        function initializeInteractiveLearning() {
+            updateGraph();
+            initializePhysicsSimulation();
+        }
+        
+        function updateGraph() {
+            const a = parseFloat(document.getElementById('param-a').value);
+            const b = parseFloat(document.getElementById('param-b').value);
+            
+            document.getElementById('param-a-value').textContent = a;
+            document.getElementById('param-b-value').textContent = b;
+            
+            const x = [];
+            const y = [];
+            
+            for (let i = -10; i <= 10; i += 0.1) {
+                x.push(i);
+                y.push(a * i + b);
+            }
+            
+            const data = [{
+                x: x,
+                y: y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `y = ${a}x + ${b}`,
+                line: {color: '#2E86AB', width: 3}
+            }];
+            
+            const layout = {
+                title: `Linear Function: y = ${a}x + ${b}`,
+                xaxis: {title: 'x', range: [-10, 10]},
+                yaxis: {title: 'y', range: [-50, 50]},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('algebra-graph', data, layout, {responsive: true});
+        }
+        
+        function initializePhysicsSimulation() {
+            const canvas = document.querySelector('#physics-canvas canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = 400;
+                
+                // Draw initial state
+                ctx.fillStyle = '#2E86AB';
+                ctx.fillRect(50, canvas.height - 50, 20, 20);
+                
+                ctx.strokeStyle = '#A23B72';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, canvas.height - 50);
+                ctx.lineTo(canvas.width - 50, canvas.height - 50);
+                ctx.stroke();
+            }
+        }
+        
+        function updateSimulation() {
+            const velocity = document.getElementById('velocity').value;
+            const angle = document.getElementById('angle').value;
+            
+            document.getElementById('velocity-value').textContent = velocity + ' m/s';
+            document.getElementById('angle-value').textContent = angle + '°';
+        }
+        
+        function runSimulation() {
+            showNotification('Running physics simulation...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Simulation complete! Projectile landed at 245m', 'success');
+            }, 2000);
+        }
+        
+        function resetSimulation() {
+            showNotification('Simulation reset', 'info');
+            initializePhysicsSimulation();
+        }
+        
+        function mixReactants() {
+            const reactantA = document.getElementById('reactant-a').value;
+            const reactantB = document.getElementById('reactant-b').value;
+            
+            const display = document.getElementById('reaction-display');
+            const equation = document.getElementById('reaction-equation');
+            
+            display.innerHTML = '<div>🔥 Reaction in progress...</div>';
+            
+            setTimeout(() => {
+                if (reactantA === 'H2' && reactantB === 'O2') {
+                    display.innerHTML = '<div>💧 Water formed!</div>';
+                    equation.textContent = '2H₂ + O₂ → 2H₂O';
+                } else {
+                    display.innerHTML = '<div>⚗️ Reaction complete!</div>';
+                    equation.textContent = `${reactantA} + ${reactantB} → Product`;
+                }
+                
+                showNotification('Chemical reaction complete!', 'success');
+            }, 2000);
+        }
+        
+        function submitAnswer() {
+            const selected = document.querySelector('input[name="answer"]:checked');
+            if (selected) {
+                if (selected.value === 'b') {
+                    showNotification('Correct! The derivative of x² is 2x', 'success');
+                } else {
+                    showNotification('Incorrect. Try again or get a hint!', 'error');
+                }
+                
+                // Update progress
+                const progress = document.getElementById('quiz-progress');
+                const currentWidth = parseInt(progress.style.width);
+                progress.style.width = Math.min(currentWidth + 20, 100) + '%';
+            }
+        }
+        
+        function getHint() {
+            showNotification('Hint: Use the power rule - bring down the exponent and subtract 1', 'info');
+        }
+        
+        // AI Tutoring Functions
+        function initializeAITutoring() {
+            createPersonalizedPathViz();
+            createPerformanceChart();
+        }
+        
+        function createPersonalizedPathViz() {
+            const data = [{
+                x: [1, 2, 3, 4, 5],
+                y: [70, 75, 82, 88, 92],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Predicted Progress',
+                line: {color: '#2E86AB', width: 3, dash: 'dot'},
+                marker: {size: 10, color: '#A23B72'}
+            }];
+            
+            const layout = {
+                title: 'Personalized Learning Path',
+                xaxis: {title: 'Learning Sessions'},
+                yaxis: {title: 'Expected Performance'},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('learning-path-viz', data, layout, {responsive: true});
+        }
+        
+        function createPerformanceChart() {
+            const data = [{
+                x: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                y: [78, 82, 85, 89],
+                type: 'bar',
+                marker: {color: '#2E86AB'}
+            }];
+            
+            const layout = {
+                title: 'Performance Trend',
+                yaxis: {title: 'Accuracy %'},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('performance-chart', data, layout, {responsive: true});
+        }
+        
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                // Add user message
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user';
+                userMessage.innerHTML = `<strong>You:</strong> ${message}`;
+                messagesContainer.appendChild(userMessage);
+                
+                // Clear input
+                input.value = '';
+                
+                // Show typing indicator
+                const typingIndicator = document.createElement('div');
+                typingIndicator.className = 'message ai typing';
+                typingIndicator.innerHTML = '<strong>AI Tutor:</strong> <em>Thinking with MemMachine and Neo4j...</em>';
+                messagesContainer.appendChild(typingIndicator);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Simulate enhanced AI response with memory and knowledge graph
+                setTimeout(() => {
+                    messagesContainer.removeChild(typingIndicator);
+                    
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message ai';
+                    
+                    // Generate contextual response based on message content
+                    let response = generateEnhancedResponse(message);
+                    
+                    aiMessage.innerHTML = `<strong>🧠 Enhanced AI Tutor:</strong> ${response}`;
+                    messagesContainer.appendChild(aiMessage);
+                    
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 2000);
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+        
+        function generateEnhancedResponse(message) {
+            const messageLower = message.toLowerCase();
+            
+            // Memory-based responses
+            if (messageLower.includes('remember') || messageLower.includes('last time') || messageLower.includes('progress')) {
+                return `I remember our previous conversations! Based on your learning history stored in MemMachine, you've completed 15 sessions with 87% average accuracy. Your strongest area is algebra (92% mastery) and we've been working on calculus derivatives. 
+                
+                📊 <strong>Your Progress:</strong>
+                • Total sessions: 15
+                • Learning velocity: 1.3x average
+                • Mastery rate: 73%
+                • Current focus: Calculus derivatives
+                
+                Would you like to continue with derivatives or review any previous topics?`;
+            }
+            
+            // Knowledge graph responses
+            if (messageLower.includes('connect') || messageLower.includes('relationship') || messageLower.includes('prerequisite')) {
+                return `Great question about concept relationships! Using Neo4j knowledge graph analysis:
+                
+                🕸️ <strong>Knowledge Connections:</strong>
+                • Algebra → Quadratic Equations → Calculus → Derivatives
+                • Prerequisites for Derivatives: Functions, Limits, Basic Algebra
+                • Related concepts: Integration, Optimization, Rate of Change
+                
+                📈 <strong>Your Learning Path:</strong>
+                Based on your current progress, I recommend:
+                1. Strengthen limits (current: 65% mastery)
+                2. Practice derivative rules (next logical step)
+                3. Apply to real-world problems
+                
+                Would you like an interactive simulation to visualize these connections?`;
+            }
+            
+            // Interactive learning responses
+            if (messageLower.includes('interactive') || messageLower.includes('visual') || messageLower.includes('show me')) {
+                return `Perfect! I can create interactive learning experiences for you:
+                
+                🎮 <strong>Available Interactive Components:</strong>
+                • Algebra Visualizer - Real-time equation graphing
+                • Calculus Simulator - Derivative and integral exploration  
+                • Physics Lab - Virtual experiments with mechanics
+                • Chemistry Builder - 3D molecular construction
+                
+                🎯 <strong>Personalized for You:</strong>
+                Based on your learning style (visual) and current level (intermediate), I recommend starting with the Calculus Simulator.
+                
+                <button onclick="startInteractiveComponent('calculus_simulator')" style="background: #2E86AB; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Start Calculus Simulator</button>
+                
+                Which component interests you most?`;
+            }
+            
+            // Homework help responses
+            if (messageLower.includes('homework') || messageLower.includes('solve') || messageLower.includes('help me with')) {
+                return `I'll help you with your homework! With my enhanced capabilities:
+                
+                🔍 <strong>Smart Problem Analysis:</strong>
+                • I'll break down the problem step-by-step
+                • Connect it to concepts you've already learned
+                • Identify any prerequisite knowledge gaps
+                • Provide interactive visualizations if helpful
+                
+                📚 <strong>Memory Integration:</strong>
+                I remember similar problems you've solved before and can reference your previous work to build on your understanding.
+                
+                Please share the specific problem, and I'll provide a comprehensive solution with explanations tailored to your learning level!`;
+            }
+            
+            // Personalized learning responses
+            if (messageLower.includes('personalized') || messageLower.includes('my level') || messageLower.includes('for me')) {
+                return `Absolutely! Here's your personalized learning profile:
+                
+                🎯 <strong>Tailored Just for You:</strong>
+                • Learning style: Visual (detected from interaction patterns)
+                • Optimal study time: 2-4 PM (based on performance data)
+                • Preferred difficulty: Gradual progression with challenges
+                • Weak areas: Trigonometric identities, Complex numbers
+                • Strong areas: Linear algebra, Basic calculus
+                
+                🚀 <strong>Recommended Next Steps:</strong>
+                1. Interactive trigonometry practice (30 min)
+                2. Complex number visualization (25 min)  
+                3. Applied calculus problems (40 min)
+                
+                💡 <strong>Smart Suggestions:</strong>
+                Based on your learning velocity (1.3x), you could master trigonometric identities in about 3 focused sessions.
+                
+                Would you like me to create a personalized study plan?`;
+            }
+            
+            // Default enhanced response
+            return `That's an excellent question! Let me help you with my enhanced AI capabilities:
+            
+            🧠 <strong>Memory Integration:</strong> I remember all our previous conversations and your learning progress.
+            
+            🕸️ <strong>Knowledge Mapping:</strong> I can show you how concepts connect and build on each other.
+            
+            🎮 <strong>Interactive Learning:</strong> I can create hands-on simulations and visualizations.
+            
+            📊 <strong>Personalized Insights:</strong> Everything is tailored to your learning style and level.
+            
+            Could you be more specific about what you'd like to explore? I can provide:
+            • Detailed explanations with visual aids
+            • Interactive practice sessions
+            • Personalized learning paths
+            • Progress tracking and insights
+            • Homework help with step-by-step solutions`;
+        }
+        
+        function startInteractiveComponent(componentId) {
+            showNotification(`Starting ${componentId.replace('_', ' ')} interactive session...`, 'success');
+            
+            // Simulate component loading
+            setTimeout(() => {
+                showNotification('Interactive component loaded! Check the Interactive Learning tab for the full experience.', 'info');
+            }, 2000);
+        }
+        
+        function generatePersonalizedPath() {
+            showNotification('Generating personalized learning path...', 'info');
+            
+            setTimeout(() => {
+                showNotification('New personalized path generated!', 'success');
+                createPersonalizedPathViz();
+            }, 2000);
+        }
+        
+        // Analytics Functions
+        function initializeAnalytics() {
+            createDashboardChart();
+            createRetentionChart();
+        }
+        
+        function createDashboardChart() {
+            const data = [{
+                labels: ['Mathematics', 'Physics', 'Chemistry', 'Biology'],
+                values: [35, 25, 25, 15],
+                type: 'pie',
+                marker: {
+                    colors: ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D']
+                }
+            }];
+            
+            const layout = {
+                title: 'Study Time Distribution',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('dashboard-chart', data, layout, {responsive: true});
+        }
+        
+        function createRetentionChart() {
+            const data = [{
+                x: [1, 7, 14, 21, 30],
+                y: [100, 85, 70, 60, 55],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Memory Retention',
+                line: {color: '#E91E63', width: 3},
+                marker: {size: 8}
+            }];
+            
+            const layout = {
+                title: 'Memory Retention Curve',
+                xaxis: {title: 'Days'},
+                yaxis: {title: 'Retention %'},
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('retention-chart', data, layout, {responsive: true});
+        }
+        
+        function analyzeRetention() {
+            showNotification('Analyzing memory retention patterns...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Retention analysis complete! Optimal review schedule generated.', 'success');
+            }, 2000);
+        }
+        
+        function generatePredictions() {
+            showNotification('Generating predictive analytics...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Predictions updated based on latest data!', 'success');
+            }, 1500);
+        }
+        
+        // Utility Functions
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            // Add type-specific styling
+            if (type === 'success') {
+                notification.style.backgroundColor = '#4CAF50';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#F44336';
+            } else if (type === 'info') {
+                notification.style.backgroundColor = '#2196F3';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Initialize the demo
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSection('memory-intelligence');
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                // Update metrics with small random changes
+                learningData.accuracy = Math.max(80, Math.min(95, learningData.accuracy + (Math.random() - 0.5) * 2));
+                learningData.engagement = Math.max(85, Math.min(98, learningData.engagement + (Math.random() - 0.5) * 1));
+                
+                document.getElementById('current-accuracy').textContent = Math.round(learningData.accuracy) + '%';
+                document.getElementById('engagement-score').textContent = Math.round(learningData.engagement) + '%';
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

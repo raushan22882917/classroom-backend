@@ -25,6 +25,7 @@ venv/
 ENV/
 env/
 .venv
+venv_interactive_learning/
 
 # Environment variables
 .env
@@ -61,6 +62,46 @@ htmlcov/
 *.tmp
 *.bak
 *.cache
+
+# MemMachine persistent data
+memmachine_data/
+*.pkl
+*.pickle
+
+# Neo4j database files
+neo4j_data/
+*.db
+
+# AI model cache
+.cache/
+model_cache/
+
+# Interactive learning session data
+session_data/
+learning_sessions/
+
+# API keys and secrets
+*.key
+api_keys.json
+secrets.json
+
+# Large files and datasets
+*.csv
+*.xlsx
+*.parquet
+data/
+datasets/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Cloud deployment
+.gcloudignore
+cloudbuild.yaml.backup
 
 
 
