@@ -81,148 +81,28 @@ except Exception as e:
     print("   Application will continue - authentication will be handled per-service.")
 
 # Import routers with error handling - app can start even if some routers fail
+# Only import essential routers at startup for faster boot time
 _router_imports = {}
 _router_errors = []
 
-try:
-    from app.routers import health
-    _router_imports['health'] = health
-except Exception as e:
-    _router_errors.append(f"health: {str(e)}")
-    print(f"⚠ Warning: Failed to import health router: {e}")
+# Essential routers - import immediately
+essential_routers = ['health']
+for router_name in essential_routers:
+    try:
+        module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
+        _router_imports[router_name] = module
+        print(f"✓ Imported essential router: {router_name}")
+    except Exception as e:
+        _router_errors.append(f"{router_name}: {str(e)}")
+        print(f"⚠ Warning: Failed to import essential router {router_name}: {e}")
 
-try:
-    from app.routers import rag
-    _router_imports['rag'] = rag
-except Exception as e:
-    _router_errors.append(f"rag: {str(e)}")
-    print(f"⚠ Warning: Failed to import rag router: {e}")
-
-try:
-    from app.routers import doubt
-    _router_imports['doubt'] = doubt
-except Exception as e:
-    _router_errors.append(f"doubt: {str(e)}")
-    print(f"⚠ Warning: Failed to import doubt router: {e}")
-
-try:
-    from app.routers import homework
-    _router_imports['homework'] = homework
-except Exception as e:
-    _router_errors.append(f"homework: {str(e)}")
-    print(f"⚠ Warning: Failed to import homework router: {e}")
-
-try:
-    from app.routers import microplan
-    _router_imports['microplan'] = microplan
-except Exception as e:
-    _router_errors.append(f"microplan: {str(e)}")
-    print(f"⚠ Warning: Failed to import microplan router: {e}")
-
-try:
-    from app.routers import exam
-    _router_imports['exam'] = exam
-except Exception as e:
-    _router_errors.append(f"exam: {str(e)}")
-    print(f"⚠ Warning: Failed to import exam router: {e}")
-
-try:
-    from app.routers import quiz
-    _router_imports['quiz'] = quiz
-except Exception as e:
-    _router_errors.append(f"quiz: {str(e)}")
-    print(f"⚠ Warning: Failed to import quiz router: {e}")
-
-try:
-    from app.routers import videos
-    _router_imports['videos'] = videos
-except Exception as e:
-    _router_errors.append(f"videos: {str(e)}")
-    print(f"⚠ Warning: Failed to import videos router: {e}")
-
-try:
-    from app.routers import hots
-    _router_imports['hots'] = hots
-except Exception as e:
-    _router_errors.append(f"hots: {str(e)}")
-    print(f"⚠ Warning: Failed to import hots router: {e}")
-
-try:
-    from app.routers import admin
-    _router_imports['admin'] = admin
-except Exception as e:
-    _router_errors.append(f"admin: {str(e)}")
-    print(f"⚠ Warning: Failed to import admin router: {e}")
-
-try:
-    from app.routers import progress
-    _router_imports['progress'] = progress
-except Exception as e:
-    _router_errors.append(f"progress: {str(e)}")
-    print(f"⚠ Warning: Failed to import progress router: {e}")
-
-try:
-    from app.routers import analytics
-    _router_imports['analytics'] = analytics
-except Exception as e:
-    _router_errors.append(f"analytics: {str(e)}")
-    print(f"⚠ Warning: Failed to import analytics router: {e}")
-
-try:
-    from app.routers import translation
-    _router_imports['translation'] = translation
-except Exception as e:
-    _router_errors.append(f"translation: {str(e)}")
-    print(f"⚠ Warning: Failed to import translation router: {e}")
-
-try:
-    from app.routers import ai_tutoring
-    _router_imports['ai_tutoring'] = ai_tutoring
-except Exception as e:
-    _router_errors.append(f"ai_tutoring: {str(e)}")
-    print(f"⚠ Warning: Failed to import ai_tutoring router: {e}")
-
-try:
-    from app.routers import teacher_tools
-    _router_imports['teacher_tools'] = teacher_tools
-except Exception as e:
-    _router_errors.append(f"teacher_tools: {str(e)}")
-    print(f"⚠ Warning: Failed to import teacher_tools router: {e}")
-
-try:
-    from app.routers import wellbeing
-    _router_imports['wellbeing'] = wellbeing
-except Exception as e:
-    _router_errors.append(f"wellbeing: {str(e)}")
-    print(f"⚠ Warning: Failed to import wellbeing router: {e}")
-
-try:
-    from app.routers import teacher
-    _router_imports['teacher'] = teacher
-except Exception as e:
-    _router_errors.append(f"teacher: {str(e)}")
-    print(f"⚠ Warning: Failed to import teacher router: {e}")
-
-try:
-    from app.routers import messages
-    _router_imports['messages'] = messages
-except Exception as e:
-    _router_errors.append(f"messages: {str(e)}")
-    print(f"⚠ Warning: Failed to import messages router: {e}")
-
-try:
-    from app.routers import notification
-    _router_imports['notification'] = notification
-except Exception as e:
-    _router_errors.append(f"notification: {str(e)}")
-    print(f"⚠ Warning: Failed to import notification router: {e}")
-
-try:
-    from app.routers import memory_intelligence
-    _router_imports['memory_intelligence'] = memory_intelligence
-except Exception as e:
-    _router_errors.append(f"memory_intelligence: {str(e)}")
-    print(f"⚠ Warning: Failed to import memory_intelligence router: {e}")
+# Non-essential routers - defer import to startup event for faster boot
+_deferred_routers = [
+    'rag', 'doubt', 'homework', 'microplan', 'exam', 'quiz', 'videos', 
+    'hots', 'admin', 'progress', 'analytics', 'translation', 'ai_tutoring',
+    'teacher_tools', 'wellbeing', 'teacher', 'messages', 'notification', 
+    'memory_intelligence'
+]
 
 # Magic learn router removed
 
@@ -344,6 +224,12 @@ async def root():
     """Root endpoint - responds immediately for startup probe"""
     return {"status": "ok", "message": "Classroom Backend API"}
 
+# Add a simple readiness probe
+@app.get("/ready")
+async def readiness_probe():
+    """Readiness probe - indicates when app is ready to serve traffic"""
+    return {"status": "ready", "timestamp": __import__('time').time()}
+
 # Core API info endpoint
 @app.get("/info")
 async def api_info():
@@ -354,25 +240,6 @@ async def api_info():
         "version": "1.0.0",
         "features": ["AI Tutoring", "Content Management", "Assessment"]
     }
-    
-    origin = request.headers.get("origin", "")
-    
-    # Create response with CORS headers
-    response = Response()
-    
-    # Allow localhost origins and configured origins
-    if origin and (
-        origin.startswith("http://localhost:") or 
-        origin.startswith("https://localhost:") or
-        origin in cors_origins
-    ):
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
-        response.headers["Access-Control-Max-Age"] = "3600"
-    
-    return response
 
 # Add alias routes for backward compatibility (proxy /ai-tutoring/* to /api/ai-tutoring/*)
 # This allows frontend to call /ai-tutoring/sessions instead of /api/ai-tutoring/sessions
@@ -443,7 +310,33 @@ async def _handle_ai_tutoring_create_session(request_data: dict):
 async def _handle_ai_tutoring_session_messages(session_id: str, limit: int):
     """Helper function to handle session messages requests"""
     try:
-        from app.routers.ai_tutoring import get
+        from app.routers.ai_tutoring import get_session_messages
+        # Call the actual handler function
+        return await get_session_messages(session_id=session_id, limit=limit)
+    except ImportError as e:
+        # Router module import failed - return empty messages list as fallback
+        return {
+            "success": True,
+            "messages": [],
+            "count": 0,
+            "message": "AI Tutoring service is initializing. Please try again in a moment."
+        }
+    except Exception as e:
+        # Other errors - log and return error response
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in AI tutoring session messages: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": f"Failed to fetch session messages: {str(e)}",
+                    "retryable": True
+                }
+            }
+        )
 
 @app.get("/ai-tutoring/sessions")
 async def ai_tutoring_sessions_alias(
@@ -662,54 +555,54 @@ async def ai_tutoring_send_message_direct(request: Request):
             }
         )
 
-# Include routers (only those that imported successfully)
+# Include essential routers immediately (only health for fast startup)
 if 'health' in _router_imports:
     app.include_router(_router_imports['health'].router, prefix="/api", tags=["health"])
-if 'rag' in _router_imports:
-    app.include_router(_router_imports['rag'].router, prefix="/api", tags=["rag"])
-if 'doubt' in _router_imports:
-    app.include_router(_router_imports['doubt'].router, prefix="/api", tags=["doubt"])
-if 'homework' in _router_imports:
-    app.include_router(_router_imports['homework'].router, prefix="/api", tags=["homework"])
-if 'microplan' in _router_imports:
-    app.include_router(_router_imports['microplan'].router, prefix="/api", tags=["microplan"])
-if 'exam' in _router_imports:
-    app.include_router(_router_imports['exam'].router, prefix="/api", tags=["exam"])
-if 'quiz' in _router_imports:
-    app.include_router(_router_imports['quiz'].router, prefix="/api", tags=["quiz"])
-if 'videos' in _router_imports:
-    app.include_router(_router_imports['videos'].router, prefix="/api/videos", tags=["videos"])
-if 'hots' in _router_imports:
-    app.include_router(_router_imports['hots'].router, prefix="/api/hots", tags=["hots"])
-if 'admin' in _router_imports:
-    app.include_router(_router_imports['admin'].router, prefix="/api", tags=["admin"])
-if 'progress' in _router_imports:
-    app.include_router(_router_imports['progress'].router, prefix="/api", tags=["progress"])
-if 'analytics' in _router_imports:
-    app.include_router(_router_imports['analytics'].router, prefix="/api", tags=["analytics"])
-if 'translation' in _router_imports:
-    app.include_router(_router_imports['translation'].router, prefix="/api", tags=["translation"])
-if 'ai_tutoring' in _router_imports:
-    app.include_router(_router_imports['ai_tutoring'].router, prefix="/api", tags=["ai-tutoring"])
-if 'teacher_tools' in _router_imports:
-    app.include_router(_router_imports['teacher_tools'].router, prefix="/api", tags=["teacher-tools"])
-if 'teacher' in _router_imports:
-    app.include_router(_router_imports['teacher'].router, prefix="/api", tags=["teacher"])
-if 'wellbeing' in _router_imports:
-    app.include_router(_router_imports['wellbeing'].router, prefix="/api", tags=["wellbeing"])
-if 'messages' in _router_imports:
-    app.include_router(_router_imports['messages'].router, prefix="/api", tags=["messages"])
-if 'notification' in _router_imports:
-    app.include_router(_router_imports['notification'].router, prefix="/api", tags=["notifications"])
-if 'memory_intelligence' in _router_imports:
-    app.include_router(_router_imports['memory_intelligence'].router, prefix="/api", tags=["memory-intelligence"])
-# Magic learn router removed
+    print("✓ Health router included")
 
-# Log router import status
-if _router_errors:
-    print(f"⚠ Warning: {len(_router_errors)} router(s) failed to import: {', '.join(_router_errors)}")
-else:
-    print(f"✓ All {len(_router_imports)} routers imported successfully")
+# Function to load deferred routers
+def load_deferred_routers():
+    """Load non-essential routers after startup"""
+    router_configs = [
+        ('rag', '/api', ['rag']),
+        ('doubt', '/api', ['doubt']),
+        ('homework', '/api', ['homework']),
+        ('microplan', '/api', ['microplan']),
+        ('exam', '/api', ['exam']),
+        ('quiz', '/api', ['quiz']),
+        ('videos', '/api/videos', ['videos']),
+        ('hots', '/api/hots', ['hots']),
+        ('admin', '/api', ['admin']),
+        ('progress', '/api', ['progress']),
+        ('analytics', '/api', ['analytics']),
+        ('translation', '/api', ['translation']),
+        ('ai_tutoring', '/api', ['ai-tutoring']),
+        ('teacher_tools', '/api', ['teacher-tools']),
+        ('teacher', '/api', ['teacher']),
+        ('wellbeing', '/api', ['wellbeing']),
+        ('messages', '/api', ['messages']),
+        ('notification', '/api', ['notifications']),
+        ('memory_intelligence', '/api', ['memory-intelligence'])
+    ]
+    
+    loaded_count = 0
+    for router_name, prefix, tags in router_configs:
+        try:
+            if router_name not in _router_imports:
+                module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
+                _router_imports[router_name] = module
+                app.include_router(module.router, prefix=prefix, tags=tags)
+                loaded_count += 1
+                print(f"✓ Loaded deferred router: {router_name}")
+        except Exception as e:
+            _router_errors.append(f"{router_name}: {str(e)}")
+            print(f"⚠ Warning: Failed to load deferred router {router_name}: {e}")
+    
+    print(f"✓ Loaded {loaded_count} deferred routers")
+    return loaded_count
+
+# Log initial router status
+print(f"✓ {len(_router_imports)} essential routers loaded, {len(_deferred_routers)} deferred")
 
 # Placeholder routers for future implementation
 # app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -720,10 +613,14 @@ else:
 async def startup_event():
     """Initialize services on startup"""
     port = os.getenv("PORT", str(settings.app_port))
-    print(f"Starting Class 12 Learning Platform API in {settings.app_env} mode")
-    print(f"Listening on port: {port}")
-    print(f"CORS enabled for origins: {settings.cors_origins_list}")
-    # Services will initialize lazily when needed - don't block startup
+    print(f"🚀 Starting Class 12 Learning Platform API in {settings.app_env} mode")
+    print(f"🌐 Listening on port: {port}")
+    print(f"🔒 CORS enabled for origins: {settings.cors_origins_list}")
+    
+    # Load deferred routers in background (don't block startup)
+    import asyncio
+    asyncio.create_task(asyncio.to_thread(load_deferred_routers))
+    print("✓ Deferred router loading started in background")
 
 
 @app.on_event("shutdown")

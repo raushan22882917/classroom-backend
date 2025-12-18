@@ -16,52 +16,88 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
 
 # Virtual environments
+.env
+.venv
+env/
 venv/
 ENV/
-env/
-.venv
+env.bak/
+venv.bak/
 venv_interactive_learning/
 
-# Environment variables
+# Environment variables and secrets
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
 
-# Service account credentials
+# Service account credentials and API keys
 service-account.json
 service-account-key.json
 *-service-account*.json
 *.json.enc
+*.key
+api_keys.json
+secrets.json
+credentials.json
+google-credentials.json
 
-# IDE
+# IDE and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
 *.log
 logs/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Temporary files
-*.tmp
-*.bak
-*.cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # MemMachine persistent data
 memmachine_data/
@@ -71,37 +107,71 @@ memmachine_data/
 # Neo4j database files
 neo4j_data/
 *.db
+*.neo4j
 
-# AI model cache
+# AI model cache and embeddings
 .cache/
 model_cache/
+embeddings_cache/
+vector_cache/
 
 # Interactive learning session data
 session_data/
 learning_sessions/
-
-# API keys and secrets
-*.key
-api_keys.json
-secrets.json
+user_sessions/
 
 # Large files and datasets
 *.csv
 *.xlsx
 *.parquet
+*.h5
+*.hdf5
 data/
 datasets/
+raw_data/
 
-# Jupyter notebooks checkpoints
+# Jupyter notebooks
 .ipynb_checkpoints/
+*.ipynb
 
 # Docker
 .dockerignore
 docker-compose.override.yml
+.docker/
 
 # Cloud deployment
 .gcloudignore
 cloudbuild.yaml.backup
+deployment-logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+*.temp
+temp/
+tmp/
+
+# Package managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Redis dump files
+dump.rdb
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Local development
+local_config.py
+dev_settings.py
+test_data/
 
 
 

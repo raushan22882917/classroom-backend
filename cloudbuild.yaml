@@ -31,10 +31,26 @@ steps:
       - '--cpu'
       - '2'
       - '--timeout'
-      - '300'
+      - '900'
+      - '--cpu-throttling'
+      - '--no-cpu-throttling'
       - '--max-instances'
       - '10'
       - '--cpu-boost'
+      - '--execution-environment'
+      - 'gen2'
+      - '--startup-probe-type'
+      - 'http-get'
+      - '--startup-probe-http-get-path'
+      - '/ready'
+      - '--startup-probe-initial-delay'
+      - '10'
+      - '--startup-probe-timeout'
+      - '5'
+      - '--startup-probe-period'
+      - '10'
+      - '--startup-probe-failure-threshold'
+      - '6'
       - '--set-env-vars'
       - 'SUPABASE_URL=https://eplwyruyzllqbmnpmdko.supabase.co,GOOGLE_CLOUD_PROJECT=buiseness-417505,GOOGLE_APPLICATION_CREDENTIALS=/secrets/service-account.json,VERTEX_AI_LOCATION=us-central1,VERTEX_AI_EMBEDDING_MODEL=text-embedding-004,PINECONE_ENVIRONMENT=your_pinecone_environment,PINECONE_INDEX_NAME=class12-learning,REDIS_HOST=localhost,REDIS_PORT=6379,REDIS_PASSWORD=,APP_ENV=production,APP_HOST=0.0.0.0,CORS_ORIGINS=http://localhost:5173;http://localhost:3000;http://localhost:8080,RATE_LIMIT_PER_MINUTE=100'
       - '--update-secrets'
@@ -47,4 +63,6 @@ images:
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
+
+timeout: '1200s'  # 20 minutes build timeout
 

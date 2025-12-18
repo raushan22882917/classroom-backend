@@ -44,6 +44,9 @@ ENV PATH=/root/.local/bin:$PATH
 # We'll read it from the environment at runtime
 ENV PORT=8080
 
+# Set Python to run in unbuffered mode for better logging
+ENV PYTHONUNBUFFERED=1
+
 # Expose port (Cloud Run uses PORT env var)
 EXPOSE 8080
 

@@ -53,6 +53,24 @@ fi
 
 echo "✅ All checks passed, starting server..."
 
+# Test import first to catch any Python errors early
+echo "🧪 Testing Python import..."
+python -c "
+try:
+    import app.main
+    print('✅ Python import successful')
+except Exception as e:
+    print(f'❌ Python import failed: {e}')
+    exit(1)
+"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Python import test failed, exiting"
+    exit 1
+fi
+
+echo "🚀 Starting FastAPI server..."
+
 # Start the FastAPI server with uvicorn
 # Use 0.0.0.0 to bind to all interfaces (required for Cloud Run)
 # Use the PORT environment variable set by Cloud Run
