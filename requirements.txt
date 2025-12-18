@@ -4,73 +4,40 @@ uvicorn[standard]>=0.32.0
 python-multipart>=0.0.20
 
 # Database
-supabase>=2.24.0
+supabase>=2.27.0
 
-# Google Cloud services
-google-cloud-aiplatform>=1.70.0
+# Google AI
 google-generativeai>=0.8.0
-google-cloud-vision>=3.11.0
-google-cloud-speech>=2.34.0
-google-cloud-bigquery>=3.38.0
-google-cloud-translate>=3.15.0
-
-# LangChain for RAG
-langchain>=0.3.0
-langchain-text-splitters>=0.3.0
-
-# Vector database
-pinecone>=5.0.0
-
-# External APIs
-wolframalpha>=5.1.0
 google-api-python-client>=2.187.0
-youtube-transcript-api>=1.2.0
 
-# Utilities
-pydantic>=2.10.0
+# Core utilities
+pydantic>=2.10.0,<3.0.0
 pydantic-settings>=2.12.0
 python-dotenv>=1.0.0
-redis>=7.1.0
-numpy>=2.0.0
-pandas>=2.2.0
-Pillow>=12.0.0
-xmltodict>=1.0.0
-PyPDF2>=3.0.0
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
 httpx>=0.27.0
 
 # Rate limiting
 slowapi>=0.1.9
 
-# Computer vision (if needed)
-# opencv-python>=4.5.0
-
-# MemVerge MemMachine for persistent memory
-memverge-memmachine>=1.0.0
+# Memory and system monitoring
 memory-profiler>=0.61.0
+psutil>=5.9.0
 
-# Neo4j Graph Database
-neo4j>=5.15.0
-py2neo>=2021.2.4
-neomodel>=5.3.0
+# Data visualization
+plotly>=5.17.0,<6.0.0
+matplotlib>=3.7.0,<4.0.0
+seaborn>=0.12.0,<1.0.0
+networkx>=3.0.0,<4.0.0
 
-# Interactive Learning Features
-plotly>=5.17.0
-dash>=2.16.0
-streamlit>=1.29.0
-gradio>=4.8.0
+# Machine learning
+scikit-learn>=1.3.0,<2.0.0
 
-# Advanced AI Features
-transformers>=4.36.0
-sentence-transformers>=2.2.2
-torch>=2.1.0
-scikit-learn>=1.3.0
-
-# Real-time Features
+# Real-time features
 websockets>=12.0
-socketio>=5.10.0
-python-socketio>=5.10.0
 
-# Enhanced Analytics
-matplotlib>=3.8.0
-seaborn>=0.13.0
-networkx>=3.2.1
+# File processing
+Pillow>=10.0.0,<11.0.0
+xmltodict>=0.13.0
+PyPDF2>=3.0.0,<4.0.0
