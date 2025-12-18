@@ -264,17 +264,36 @@ Provide a clear, accurate, and helpful response appropriate for Class 12 level. 
 
             # Generate with grounding (if available)
             try:
+                safety_settings = [
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                ]
+                
                 response = model.generate_content(
                     prompt,
-                    generation_config={
-                        "temperature": 0.1,
-                        "top_p": 0.8,
-                        "top_k": 40,
-                        "max_output_tokens": query.max_tokens or 500
-                    }
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.1,
+                        top_p=0.8,
+                        top_k=40,
+                        max_output_tokens=query.max_tokens or 500,
+                        candidate_count=1
+                    ),
+                    safety_settings=safety_settings
                 )
                 
-                generated_text = response.text if response.text else "I couldn't generate a response. Please try rephrasing your question."
+                # Handle response with better error checking
+                if hasattr(response, 'text') and response.text:
+                    generated_text = response.text
+                elif hasattr(response, 'candidates') and response.candidates:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts') and candidate.content.parts:
+                        generated_text = ''.join(part.text for part in candidate.content.parts if hasattr(part, 'text'))
+                    else:
+                        generated_text = "I couldn't generate a complete response. Please try rephrasing your question."
+                else:
+                    generated_text = "I couldn't generate a response. Please try rephrasing your question."
                 
             except Exception as e:
                 logger.warning(f"Gemini generation failed: {e}")
@@ -367,17 +386,36 @@ Instructions:
 
 Answer:"""
 
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
+            
             response = model.generate_content(
                 prompt,
-                generation_config={
-                    "temperature": 0.1,
-                    "top_p": 0.8,
-                    "top_k": 40,
-                    "max_output_tokens": query.max_tokens or 500
-                }
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1,
+                    top_p=0.8,
+                    top_k=40,
+                    max_output_tokens=query.max_tokens or 500,
+                    candidate_count=1
+                ),
+                safety_settings=safety_settings
             )
             
-            generated_text = response.text if response.text else "I couldn't generate a response based on the available content."
+            # Handle response with better error checking
+            if hasattr(response, 'text') and response.text:
+                generated_text = response.text
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts') and candidate.content.parts:
+                    generated_text = ''.join(part.text for part in candidate.content.parts if hasattr(part, 'text'))
+                else:
+                    generated_text = "I couldn't generate a complete response based on the available content."
+            else:
+                generated_text = "I couldn't generate a response based on the available content."
             
             # Calculate average confidence
             avg_confidence = sum(r["score"] for r in search_results) / len(search_results) if search_results else 0.5
@@ -428,15 +466,34 @@ Answer:"""
 
 Provide a clear, accurate response appropriate for Class 12 level."""
 
+                    safety_settings = [
+                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                    ]
+                    
                     response = model.generate_content(
                         prompt,
-                        generation_config={
-                            "temperature": 0.2,
-                            "max_output_tokens": query.max_tokens or 300
-                        }
+                        generation_config=genai.types.GenerationConfig(
+                            temperature=0.2,
+                            max_output_tokens=query.max_tokens or 300,
+                            candidate_count=1
+                        ),
+                        safety_settings=safety_settings
                     )
                     
-                    generated_text = response.text if response.text else f"Here's what I know about this topic:\n\n{' '.join(fallback_content)}"
+                    # Handle response with better error checking
+                    if hasattr(response, 'text') and response.text:
+                        generated_text = response.text
+                    elif hasattr(response, 'candidates') and response.candidates:
+                        candidate = response.candidates[0]
+                        if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts') and candidate.content.parts:
+                            generated_text = ''.join(part.text for part in candidate.content.parts if hasattr(part, 'text'))
+                        else:
+                            generated_text = f"Here's what I know about this topic:\n\n{' '.join(fallback_content)}"
+                    else:
+                        generated_text = f"Here's what I know about this topic:\n\n{' '.join(fallback_content)}"
                     
                 except Exception as e:
                     logger.warning(f"Fallback Gemini generation failed: {e}")
