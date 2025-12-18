@@ -257,24 +257,50 @@ async def wolfram_chat(
         Dictionary with solution, steps, and metadata
     """
     try:
+        print(f"🔍 Wolfram chat request: query='{query}', include_steps={include_steps}")
+        
         if not query or not query.strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Query cannot be empty"
             )
         
-        from app.services.wolfram_service import wolfram_service
+        # Import wolfram service
+        try:
+            from app.services.wolfram_service import wolfram_service
+        except ImportError as e:
+            print(f"❌ Failed to import wolfram_service: {e}")
+            return {
+                "success": False,
+                "query": query,
+                "error": "Wolfram Alpha service is not available. Please check the service configuration.",
+                "result": None
+            }
+        
+        # Check if wolfram service is properly configured
+        if not hasattr(wolfram_service, 'solve_math_problem'):
+            print("❌ Wolfram service not properly initialized")
+            return {
+                "success": False,
+                "query": query,
+                "error": "Wolfram Alpha service is not properly configured.",
+                "result": None
+            }
         
         result = await wolfram_service.solve_math_problem(
             query=query,
             include_steps=include_steps
         )
         
+        print(f"📊 Wolfram result: {result}")
+        
         if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Wolfram Alpha service is currently unavailable. Please try again later."
-            )
+            return {
+                "success": False,
+                "query": query,
+                "error": "Wolfram Alpha service is currently unavailable. Please try again later.",
+                "result": None
+            }
         
         # Check if result has an error (but not boolean False)
         error_msg = result.get("error")
@@ -304,7 +330,14 @@ async def wolfram_chat(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process Wolfram query: {str(e)}"
-        )
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Wolfram chat error: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        
+        return {
+            "success": False,
+            "query": query,
+            "error": f"Failed to process Wolfram query: {str(e)}",
+            "result": None
+        }

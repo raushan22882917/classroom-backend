@@ -533,6 +533,101 @@ async def ai_tutoring_create_session_api_double(request: Request):
             }
         )
 
+# Add direct Wolfram chat endpoint to handle frontend calls
+@app.post("/api/doubt/wolfram/chat")
+async def wolfram_chat_direct(request: Request):
+    """
+    Direct route for Wolfram Alpha chat
+    This ensures the endpoint works even if router import fails
+    """
+    try:
+        from app.routers.doubt import wolfram_chat
+        from fastapi import Query
+        
+        # Get query parameters
+        query_params = request.query_params
+        query = query_params.get("query", "")
+        include_steps = query_params.get("include_steps", "true").lower() == "true"
+        
+        print(f"🔍 Direct Wolfram request: query='{query}', include_steps={include_steps}")
+        
+        if not query:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Query parameter is required",
+                    "query": query
+                }
+            )
+        
+        # Call the actual handler
+        return await wolfram_chat(query=query, include_steps=include_steps)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import wolfram_chat: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "Wolfram Alpha service is initializing. Please try again in a moment.",
+                "query": query if 'query' in locals() else ""
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error in direct Wolfram chat: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Failed to process Wolfram query: {str(e)}",
+                "query": query if 'query' in locals() else ""
+            }
+        )
+
+# Add direct AI tutoring message endpoint
+@app.post("/api/ai-tutoring/sessions/message")
+async def ai_tutoring_send_message_direct(request: Request):
+    """
+    Direct route for AI tutoring send message
+    This ensures the endpoint works even if router import fails
+    """
+    try:
+        from app.routers.ai_tutoring import send_message
+        from app.models.ai_features import SendMessageRequest
+        
+        # Parse request body
+        body = await request.json()
+        print(f"💬 AI tutoring message request: {body}")
+        
+        message_request = SendMessageRequest(**body)
+        return await send_message(message_request)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import send_message: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "AI Tutoring service is initializing. Please try again in a moment."
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error in AI tutoring send message: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Failed to send message: {str(e)}"
+            }
+        )
+
 # Include routers (only those that imported successfully)
 if 'health' in _router_imports:
     app.include_router(_router_imports['health'].router, prefix="/api", tags=["health"])

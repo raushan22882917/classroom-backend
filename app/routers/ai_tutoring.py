@@ -271,6 +271,15 @@ async def get_session_messages(
         List of messages
     """
     try:
+        # Handle undefined session_id from frontend
+        if session_id == "undefined" or not session_id or session_id.strip() == "":
+            return {
+                "success": True,
+                "messages": [],
+                "count": 0,
+                "message": "No session ID provided. Please create a session first."
+            }
+        
         service = get_enhanced_ai_tutor_service()
         messages = await service.get_session_messages(
             session_id=session_id,
@@ -282,6 +291,14 @@ async def get_session_messages(
             "count": len(messages)
         }
     except APIException as e:
+        # If session not found, return empty messages instead of error
+        if "not found" in e.message.lower():
+            return {
+                "success": True,
+                "messages": [],
+                "count": 0,
+                "message": f"Session {session_id} not found. Please create a session first."
+            }
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:
         raise HTTPException(
