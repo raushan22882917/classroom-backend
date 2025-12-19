@@ -266,6 +266,50 @@ class NotificationService:
                 message=f"Failed to get notifications by creator role: {str(e)}",
                 status_code=500
             )
+    
+    async def dismiss_notification(
+        self,
+        notification_id: str,
+        user_id: str
+    ) -> bool:
+        """
+        Dismiss (delete) a notification
+        
+        Args:
+            notification_id: Notification ID to dismiss
+            user_id: User ID (for security verification)
+            
+        Returns:
+            True if successful
+        """
+        try:
+            # First verify the notification belongs to the user
+            check_result = self.supabase.table("notifications").select("id").eq(
+                "id", notification_id
+            ).eq("user_id", user_id).execute()
+            
+            if not check_result.data:
+                raise APIException(
+                    code="NOTIFICATION_NOT_FOUND",
+                    message="Notification not found or does not belong to user",
+                    status_code=404
+                )
+            
+            # Delete the notification
+            delete_result = self.supabase.table("notifications").delete().eq(
+                "id", notification_id
+            ).eq("user_id", user_id).execute()
+            
+            return True
+            
+        except APIException:
+            raise
+        except Exception as e:
+            raise APIException(
+                code="DISMISS_NOTIFICATION_ERROR",
+                message=f"Failed to dismiss notification: {str(e)}",
+                status_code=500
+            )
 
 
 # Global service instance

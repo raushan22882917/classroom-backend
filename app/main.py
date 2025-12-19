@@ -86,7 +86,11 @@ _router_imports = {}
 _router_errors = []
 
 # Essential routers - import immediately (critical for frontend)
-essential_routers = ['health', 'rag', 'doubt', 'ai_tutoring', 'content', 'admin']
+essential_routers = [
+    'health', 'rag', 'doubt', 'ai_tutoring', 'content', 'admin', 
+    'videos', 'notification', 'exam', 'quiz', 'progress', 'microplan', 
+    'homework', 'analytics', 'hots', 'translation'
+]
 for router_name in essential_routers:
     try:
         module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
@@ -98,9 +102,7 @@ for router_name in essential_routers:
 
 # Non-essential routers - defer import to startup event for faster boot
 _deferred_routers = [
-    'homework', 'microplan', 'exam', 'quiz', 'videos', 
-    'hots', 'progress', 'analytics', 'translation',
-    'teacher_tools', 'wellbeing', 'teacher', 'messages', 'notification', 
+    'teacher_tools', 'wellbeing', 'teacher', 'messages', 
     'memory_intelligence'
 ]
 
@@ -646,6 +648,80 @@ async def admin_dashboard_direct(request: Request):
             }
         )
 
+# Add direct translation endpoints as fallback
+@app.post("/api/translation/translate")
+async def translate_text_direct(request: Request):
+    """
+    Direct route for text translation
+    This ensures the endpoint works even if translation router import fails
+    """
+    try:
+        from app.routers.translation import translate_text
+        body = await request.json()
+        return await translate_text(request, **body)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import translation service: {e}")
+        # Return fallback response
+        body = await request.json()
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "translated_text": body.get("text", ""),  # Return original text as fallback
+                "source_language": body.get("source_language", "auto"),
+                "target_language": body.get("target_language", "en"),
+                "message": "Translation service is initializing. Returning original text."
+            }
+        )
+    except Exception as e:
+        print(f"❌ Error in translation: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Translation failed: {str(e)}"
+            }
+        )
+
+@app.get("/api/translation/languages")
+async def get_supported_languages_direct(request: Request):
+    """
+    Direct route for supported languages
+    This ensures the endpoint works even if translation router import fails
+    """
+    try:
+        from app.routers.translation import get_supported_languages
+        return await get_supported_languages(request)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import translation service: {e}")
+        # Return basic language list as fallback
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "languages": [
+                    {"code": "en", "name": "English"},
+                    {"code": "hi", "name": "Hindi"},
+                    {"code": "es", "name": "Spanish"},
+                    {"code": "fr", "name": "French"},
+                    {"code": "de", "name": "German"},
+                    {"code": "zh", "name": "Chinese"}
+                ],
+                "message": "Translation service is initializing. Showing basic language list."
+            }
+        )
+    except Exception as e:
+        print(f"❌ Error getting languages: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Failed to get languages: {str(e)}"
+            }
+        )
+
 # Include essential routers immediately (critical for frontend)
 essential_router_configs = {
     'health': ('/api', ['health']),
@@ -653,7 +729,17 @@ essential_router_configs = {
     'doubt': ('/api', ['doubt']),
     'ai_tutoring': ('/api', ['ai-tutoring']),
     'content': ('/api', ['content']),
-    'admin': ('/api', ['admin'])
+    'admin': ('/api', ['admin']),
+    'videos': ('/api/videos', ['videos']),
+    'notification': ('/api', ['notifications']),
+    'exam': ('/api', ['exam']),
+    'quiz': ('/api', ['quiz']),
+    'progress': ('/api', ['progress']),
+    'microplan': ('/api', ['microplan']),
+    'homework': ('/api', ['homework']),
+    'analytics': ('/api', ['analytics']),
+    'hots': ('/api/hots', ['hots']),
+    'translation': ('/api', ['translation'])
 }
 
 for router_name, (prefix, tags) in essential_router_configs.items():

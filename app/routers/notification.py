@@ -233,3 +233,35 @@ async def get_unread_count(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.delete("/notifications/{notification_id}/dismiss", response_model=dict)
+@limiter.limit("100/minute")
+async def dismiss_notification(
+    request: Request,
+    notification_id: str,
+    user_id: str = Query(..., description="User ID")
+):
+    """
+    Dismiss (delete) a notification
+    
+    Path Parameters:
+    - notification_id: Notification ID
+    
+    Query Parameters:
+    - user_id: User ID (for security verification)
+    
+    Returns:
+    - Success message
+    """
+    try:
+        result = await notification_service.dismiss_notification(
+            notification_id=notification_id,
+            user_id=user_id
+        )
+        return {"success": True, "message": "Notification dismissed successfully"}
+        
+    except APIException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
