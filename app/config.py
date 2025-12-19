@@ -37,17 +37,23 @@ class Settings(BaseSettings):
     app_env: str = "production"  # Default to production for Cloud Run
     app_host: str = "0.0.0.0"
     app_port: int = 8080  # Cloud Run default port
-    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,https://eduverse-dashboard-iota.vercel.app"
+    cors_origins: str = ""  # Not used - see cors_origins_list property
     
     # Rate Limiting
     rate_limit_per_minute: int = 100
     
     @property
     def cors_origins_list(self) -> List[str]:
-        """Parse CORS origins from comma or semicolon-separated string"""
-        # Support both comma and semicolon separators
-        separator = ";" if ";" in self.cors_origins else ","
-        return [origin.strip() for origin in self.cors_origins.split(separator)]
+        """Hardcoded CORS origins for production"""
+        return [
+            "http://localhost:5173",  # Vite dev server
+            "http://localhost:3000",  # React dev server
+            "http://localhost:8080",  # Local frontend
+            "https://eduverse-dashboard-iota.vercel.app",  # Production frontend
+            "http://127.0.0.1:5173",  # Alternative localhost
+            "http://127.0.0.1:3000",  # Alternative localhost
+            "http://127.0.0.1:8080"   # Alternative localhost
+        ]
     
     class Config:
         env_file = ".env"
@@ -113,16 +119,21 @@ Please set these in Cloud Run service configuration.
         app_env: str = "production"
         app_host: str = "0.0.0.0"
         app_port: int = 8080
-        cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,https://eduverse-dashboard-iota.vercel.app"
+        cors_origins: str = ""
         rate_limit_per_minute: int = 100
         
         @property
         def cors_origins_list(self):
-            if self.cors_origins == "*":
-                return ["*"]
-            # Support both comma and semicolon separators
-            separator = ";" if ";" in self.cors_origins else ","
-            return [o.strip() for o in self.cors_origins.split(separator)]
+            """Hardcoded CORS origins for production"""
+            return [
+                "http://localhost:5173",
+                "http://localhost:3000", 
+                "http://localhost:8080",
+                "https://eduverse-dashboard-iota.vercel.app",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:8080"
+            ]
     
     settings = MinimalSettings()
     print("⚠ Using minimal settings - application will start but some features may not work", file=sys.stderr)
