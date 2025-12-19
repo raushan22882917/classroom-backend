@@ -6,8 +6,15 @@ import uuid
 import re
 import logging
 from supabase import create_client, Client
-import PyPDF2
 from io import BytesIO
+
+# Try to import PyPDF2, fall back to text extraction if not available
+try:
+    import PyPDF2
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+    logger.warning("PyPDF2 not available, PDF processing will be limited")
 
 from app.config import settings
 
@@ -557,6 +564,13 @@ class ContentService:
             Extracted text
         """
         try:
+            if not PDF_AVAILABLE:
+                raise APIException(
+                    code="PDF_LIBRARY_UNAVAILABLE",
+                    message="PDF processing library not available. Please upload text files instead.",
+                    status_code=400
+                )
+            
             pdf_file = BytesIO(pdf_content)
             pdf_reader = PyPDF2.PdfReader(pdf_file)
             
@@ -566,6 +580,8 @@ class ContentService:
             
             return "\n\n".join(text_parts)
             
+        except APIException:
+            raise
         except Exception as e:
             raise APIException(
                 code="PDF_EXTRACTION_ERROR",

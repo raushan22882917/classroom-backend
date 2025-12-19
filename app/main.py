@@ -86,7 +86,7 @@ _router_imports = {}
 _router_errors = []
 
 # Essential routers - import immediately (critical for frontend)
-essential_routers = ['health', 'rag', 'doubt', 'ai_tutoring']
+essential_routers = ['health', 'rag', 'doubt', 'ai_tutoring', 'content', 'admin']
 for router_name in essential_routers:
     try:
         module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
@@ -99,7 +99,7 @@ for router_name in essential_routers:
 # Non-essential routers - defer import to startup event for faster boot
 _deferred_routers = [
     'homework', 'microplan', 'exam', 'quiz', 'videos', 
-    'hots', 'admin', 'progress', 'analytics', 'translation',
+    'hots', 'progress', 'analytics', 'translation',
     'teacher_tools', 'wellbeing', 'teacher', 'messages', 'notification', 
     'memory_intelligence'
 ]
@@ -600,12 +600,60 @@ async def rag_query_direct(request: Request):
             }
         )
 
+# Add direct admin dashboard endpoint as fallback
+@app.get("/api/admin/dashboard")
+async def admin_dashboard_direct(request: Request):
+    """
+    Direct route for admin dashboard
+    This ensures the endpoint works even if admin router import fails
+    """
+    try:
+        from app.routers.admin import get_admin_dashboard
+        return await get_admin_dashboard(request)
+        
+    except ImportError as e:
+        print(f"❌ Failed to import admin dashboard: {e}")
+        # Return mock data as fallback
+        return JSONResponse(
+            status_code=200,
+            content={
+                "active_students": 0,
+                "total_students": 0,
+                "average_mastery": 0.0,
+                "completion_rate": 0.0,
+                "flagged_students": [],
+                "total_content": 0,
+                "total_test_sessions": 0,
+                "message": "Admin service is initializing. Please try again in a moment."
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error in admin dashboard: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Failed to fetch dashboard metrics: {str(e)}",
+                "active_students": 0,
+                "total_students": 0,
+                "average_mastery": 0.0,
+                "completion_rate": 0.0,
+                "flagged_students": [],
+                "total_content": 0,
+                "total_test_sessions": 0
+            }
+        )
+
 # Include essential routers immediately (critical for frontend)
 essential_router_configs = {
     'health': ('/api', ['health']),
     'rag': ('/api', ['rag']),
     'doubt': ('/api', ['doubt']),
-    'ai_tutoring': ('/api', ['ai-tutoring'])
+    'ai_tutoring': ('/api', ['ai-tutoring']),
+    'content': ('/api', ['content']),
+    'admin': ('/api', ['admin'])
 }
 
 for router_name, (prefix, tags) in essential_router_configs.items():
