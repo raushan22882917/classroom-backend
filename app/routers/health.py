@@ -30,10 +30,7 @@ async def config_check():
         # If settings can't be imported, return minimal config
         return {
             "app_env": "unknown",
-            "vertex_ai_location": "unknown",
-            "vertex_ai_embedding_model": "unknown",
-            "google_rag_engine": "vertex_ai_search",
-            "vertex_search_engine_id": "not_configured",
+            "rag_system": "supabase_gemini",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": "Settings module not available"
@@ -42,10 +39,7 @@ async def config_check():
         # If any other import error, return minimal config
         return {
             "app_env": "unknown",
-            "vertex_ai_location": "unknown",
-            "vertex_ai_embedding_model": "unknown",
-            "google_rag_engine": "vertex_ai_search",
-            "vertex_search_engine_id": "not_configured",
+            "rag_system": "supabase_gemini",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": "Failed to load settings"
@@ -69,10 +63,8 @@ async def config_check():
     try:
         return {
             "app_env": getattr(settings, "app_env", "unknown"),
-            "vertex_ai_location": getattr(settings, "vertex_ai_location", "unknown"),
-            "vertex_ai_embedding_model": getattr(settings, "vertex_ai_embedding_model", "unknown"),
-            "google_rag_engine": "vertex_ai_search",
-            "vertex_search_engine_id": getattr(settings, "vertex_search_engine_id", "not_configured"),
+            "rag_system": "supabase_gemini",
+            "gemini_model": getattr(settings, "gemini_model", "gemini-2.5-flash"),
             "rate_limit_per_minute": getattr(settings, "rate_limit_per_minute", 100),
             "cors_origins": cors_origins
         }
@@ -80,10 +72,7 @@ async def config_check():
         # Last resort - return minimal response instead of raising exception
         return {
             "app_env": "unknown",
-            "vertex_ai_location": "unknown",
-            "vertex_ai_embedding_model": "unknown",
-            "google_rag_engine": "vertex_ai_search",
-            "vertex_search_engine_id": "not_configured",
+            "rag_system": "supabase_gemini",
             "rate_limit_per_minute": 100,
             "cors_origins": ["*"],
             "error": f"Partial config load: {str(e)}"

@@ -19,9 +19,9 @@ class ContentIndexer:
     def __init__(self):
         """Initialize content indexer"""
         self.project_id = settings.google_cloud_project
-        self.location = getattr(settings, 'vertex_ai_location', 'us-central1')
-        self.data_store_id = getattr(settings, 'vertex_data_store_id', None)
-        self.search_engine_id = getattr(settings, 'vertex_search_engine_id', None)
+        self.location = 'us-central1'  # Default location
+        self.data_store_id = None  # Not using Vertex AI Search
+        self.search_engine_id = None  # Not using Vertex AI Search
         
         # Initialize clients
         self.document_client = None
