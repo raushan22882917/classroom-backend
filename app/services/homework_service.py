@@ -31,7 +31,7 @@ class HomeworkService:
         self.wolfram_service = wolfram_service
         # Initialize Gemini client with API key
         self.client = genai.Client(api_key=settings.gemini_api_key)
-        self.model = "gemini-3-pro-preview"  # Use the same model as teacher service
+        self.model = "gemini-2.5-flash"  # Use the same model as teacher service
         
         # Hint generation prompts
         self.hint_prompts = {

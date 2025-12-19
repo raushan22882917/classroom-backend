@@ -38,13 +38,7 @@ class EnhancedAITutorService:
         if GEMINI_AVAILABLE and hasattr(settings, 'gemini_api_key') and settings.gemini_api_key:
             try:
                 genai.configure(api_key=settings.gemini_api_key)
-                try:
-                    self.model = genai.GenerativeModel('gemini-2.5-flash')
-                except:
-                    try:
-                        self.model = genai.GenerativeModel('gemini-1.5-flash')
-                    except:
-                        self.model = genai.GenerativeModel('gemini-pro')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
                 self.gemini_enabled = True
             except Exception as e:
                 print(f"Gemini initialization failed: {e}")

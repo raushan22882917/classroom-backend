@@ -20,13 +20,7 @@ class TeacherService:
     def __init__(self, supabase_client: Client):
         self.supabase = supabase_client
         # Initialize Gemini model - use 2.5 flash for best performance
-        try:
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
-        except:
-            try:
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
-            except:
-                self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     async def generate_lesson_plan(
         self,

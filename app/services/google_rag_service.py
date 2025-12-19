@@ -238,8 +238,8 @@ class GoogleRAGService:
     async def _generate_with_grounding(self, query: RAGQuery) -> RAGResponse:
         """Generate response using Gemini with grounding"""
         try:
-            # Use available Gemini model with fallback
-            model_names = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
+            # Use available Gemini model
+            model_names = ['gemini-2.5-flash']
             model = None
             
             for model_name in model_names:
@@ -358,7 +358,7 @@ Provide a clear, accurate, and helpful response appropriate for Class 12 level. 
             context_text = "\n\n".join(context_text_parts)
             
             # Generate response using Gemini with context
-            model_names = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro']
+            model_names = ['gemini-2.5-flash']
             model = None
             
             for model_name in model_names:
@@ -447,7 +447,7 @@ Answer:"""
             if self._gemini_initialized:
                 try:
                     # Try available models
-                    model_names = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro']
+                    model_names = ['gemini-2.5-flash']
                     model = None
                     
                     for model_name in model_names:

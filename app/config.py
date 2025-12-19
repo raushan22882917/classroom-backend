@@ -29,15 +29,8 @@ class Settings(BaseSettings):
     vertex_ai_location: str = "us-central1"
     vertex_ai_embedding_model: str = "text-embedding-005"  # Faster and better than text-embedding-004
     
-    # Gemini Model Configuration - Use faster models for better response times
-    # Latest models from Gemini API (as of 2024)
-    gemini_model_fast: str = "gemini-2.5-flash"  # Fast model for most tasks
-    gemini_model_standard: str = "gemini-2.5-flash"  # Balanced speed/quality
-    gemini_model_quality: str = "gemini-3.0-pro"  # Highest quality - most intelligent model
-    
-    # All available Gemini models (for fallback chains)
-    gemini_models_fast_chain: str = "gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash,gemini-2.0-flash-lite,gemini-1.5-flash"
-    gemini_models_quality_chain: str = "gemini-3.0-pro,gemini-2.5-pro,gemini-1.5-pro"
+    # Gemini Model Configuration - Production-ready
+    gemini_model: str = "gemini-2.5-flash"  # Only available production model
     
     # Embedding batch configuration for better throughput
     embedding_batch_size: int = 50  # Increased from 10 for faster processing
@@ -47,10 +40,10 @@ class Settings(BaseSettings):
     vertex_data_store_id: str = ""  # Vertex AI Search data store ID
     gcs_bucket_name: str = ""  # Google Cloud Storage bucket for document storage
     
-    # Legacy Pinecone config (deprecated - keeping for backward compatibility)
-    pinecone_api_key: str = ""  # Deprecated - use Google RAG instead
-    pinecone_environment: str = ""  # Deprecated - use Google RAG instead
-    pinecone_index_name: str = "class12-learning"  # Deprecated - use Google RAG instead
+    # RAG Configuration
+    rag_chunk_size: int = 1000  # Optimal chunk size for physics content
+    rag_chunk_overlap: int = 200  # Overlap between chunks
+    rag_max_context_chunks: int = 6  # Maximum chunks to use for context
     
     # Redis Configuration
     redis_host: str = "localhost"
@@ -105,8 +98,7 @@ Required environment variables that are missing:
     # Check which specific variables are missing
     required_vars = [
         "SUPABASE_URL", "SUPABASE_KEY", "SUPABASE_SERVICE_KEY",
-        "GOOGLE_CLOUD_PROJECT", "GEMINI_API_KEY",
-        "WOLFRAM_APP_ID", "YOUTUBE_API_KEY"
+        "GEMINI_API_KEY"
     ]
     missing_vars = []
     for var in required_vars:
@@ -139,18 +131,14 @@ Please set these in Cloud Run service configuration.
         youtube_api_key: str = ""
         vertex_ai_location: str = "us-central1"
         vertex_ai_embedding_model: str = "text-embedding-005"
-        gemini_model_fast: str = "gemini-2.5-flash"
-        gemini_model_standard: str = "gemini-2.5-flash"
-        gemini_model_quality: str = "gemini-3.0-pro"
-        gemini_models_fast_chain: str = "gemini-2.5-flash"
-        gemini_models_quality_chain: str = "gemini-3.0-pro"
+        gemini_model: str = "gemini-2.5-flash"
         embedding_batch_size: int = 50
         vertex_search_engine_id: str = ""
         vertex_data_store_id: str = ""
         gcs_bucket_name: str = ""
-        pinecone_api_key: str = ""  # Deprecated
-        pinecone_environment: str = ""  # Deprecated
-        pinecone_index_name: str = "class12-learning"  # Deprecated
+        rag_chunk_size: int = 1000
+        rag_chunk_overlap: int = 200
+        rag_max_context_chunks: int = 6
         redis_host: str = "localhost"
         redis_port: int = 6379
         redis_password: str = ""

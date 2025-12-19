@@ -24,12 +24,12 @@ class HOTSService:
     
     def __init__(self):
         # Use faster model for better response times - can fallback if not available
-        model_name = getattr(settings, 'gemini_model_fast', 'gemini-2.5-flash')
+        # Use production model
         try:
             self.model = genai.GenerativeModel(model_name)
         except:
             # Fallback to standard if fast model not available
-            model_name = getattr(settings, 'gemini_model_standard', 'gemini-1.5-flash')
+            model_name = getattr(settings, 'gemini_model_standard', 'gemini-2.5-flash')
             try:
                 self.model = genai.GenerativeModel(model_name)
             except:
