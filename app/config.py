@@ -19,36 +19,19 @@ class Settings(BaseSettings):
     # Gemini API
     gemini_api_key: str = ""  # Allow empty for graceful degradation
     
-    # Wolfram Alpha API
-    wolfram_app_id: str = ""  # Allow empty for graceful degradation
-    
-    # YouTube Data API
-    youtube_api_key: str = ""  # Allow empty for graceful degradation
-    
-    # Vertex AI Configuration
-    vertex_ai_location: str = "us-central1"
-    vertex_ai_embedding_model: str = "text-embedding-005"  # Faster and better than text-embedding-004
+    # Optional Services (can be empty)
+    wolfram_app_id: str = ""
+    youtube_api_key: str = ""
     
     # Gemini Model Configuration - Production-ready
     gemini_model: str = "gemini-2.5-flash"  # Only available production model
     
-    # Embedding batch configuration for better throughput
-    embedding_batch_size: int = 50  # Increased from 10 for faster processing
-    
-    # Google RAG Configuration (Vertex AI Search)
-    vertex_search_engine_id: str = ""  # Vertex AI Search engine ID
-    vertex_data_store_id: str = ""  # Vertex AI Search data store ID
-    gcs_bucket_name: str = ""  # Google Cloud Storage bucket for document storage
-    
     # RAG Configuration
-    rag_chunk_size: int = 1000  # Optimal chunk size for physics content
-    rag_chunk_overlap: int = 200  # Overlap between chunks
-    rag_max_context_chunks: int = 6  # Maximum chunks to use for context
+    rag_chunk_size: int = 1000
+    rag_chunk_overlap: int = 200
+    rag_max_context_chunks: int = 6
     
-    # Redis Configuration
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_password: str = ""
+
     
     # Application Configuration
     app_env: str = "production"  # Default to production for Cloud Run
@@ -58,12 +41,6 @@ class Settings(BaseSettings):
     
     # Rate Limiting
     rate_limit_per_minute: int = 100
-    
-    # Wolfram Alpha API Timeout (in seconds)
-    wolfram_timeout: int = 60  # Default 60 seconds for complex queries
-    wolfram_connect_timeout: int = 10  # Connection timeout in seconds
-    wolfram_read_timeout: int = 60  # Read timeout in seconds
-    wolfram_max_retries: int = 2  # Maximum number of retries for failed requests
     
     @property
     def cors_origins_list(self) -> List[str]:
@@ -129,28 +106,15 @@ Please set these in Cloud Run service configuration.
         gemini_api_key: str = ""
         wolfram_app_id: str = ""
         youtube_api_key: str = ""
-        vertex_ai_location: str = "us-central1"
-        vertex_ai_embedding_model: str = "text-embedding-005"
         gemini_model: str = "gemini-2.5-flash"
-        embedding_batch_size: int = 50
-        vertex_search_engine_id: str = ""
-        vertex_data_store_id: str = ""
-        gcs_bucket_name: str = ""
         rag_chunk_size: int = 1000
         rag_chunk_overlap: int = 200
         rag_max_context_chunks: int = 6
-        redis_host: str = "localhost"
-        redis_port: int = 6379
-        redis_password: str = ""
         app_env: str = "production"
         app_host: str = "0.0.0.0"
         app_port: int = 8080
         cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,https://eduverse-dashboard-iota.vercel.app"
         rate_limit_per_minute: int = 100
-        wolfram_timeout: int = 60
-        wolfram_connect_timeout: int = 10
-        wolfram_read_timeout: int = 60
-        wolfram_max_retries: int = 2
         
         @property
         def cors_origins_list(self):
