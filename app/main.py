@@ -89,7 +89,7 @@ _router_errors = []
 essential_routers = [
     'health', 'rag', 'doubt', 'ai_tutoring', 'content', 'admin', 
     'videos', 'notification', 'exam', 'quiz', 'progress', 'microplan', 
-    'homework', 'analytics', 'hots', 'translation'
+    'homework', 'analytics', 'hots', 'translation', 'virtual_labs'
 ]
 for router_name in essential_routers:
     try:
@@ -739,7 +739,8 @@ essential_router_configs = {
     'homework': ('/api', ['homework']),
     'analytics': ('/api', ['analytics']),
     'hots': ('/api/hots', ['hots']),
-    'translation': ('/api', ['translation'])
+    'translation': ('/api', ['translation']),
+    'virtual_labs': ('/api', ['virtual-labs'])
 }
 
 for router_name, (prefix, tags) in essential_router_configs.items():
